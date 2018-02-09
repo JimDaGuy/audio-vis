@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8" />
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="An audio visualizer app, made by James DiGrazia for Project 1 of IGME 330">
+    <meta name="author" content="James DiGrazia">
+        
+	<title>Project 1 - IGME 330</title>
+	<link rel="icon" type="image/png" href="../favicon.png">
+	
+	<!--Import Google Fonts-->
+	<link href="https://fonts.googleapis.com/css?family=Kumar+One+Outline" rel="stylesheet">
+	<!--Import Font Awesome-->
+	<script defer src="https://use.fontawesome.com/releases/v5.0.6/js/all.js"></script>
+	
+	<style>
+	body {
+         background: #111625;
+         font-family: tahoma, verdana, sans serif;
+         margin: 0;
+         min-width: 1250px;
+         color: white;
+      }
+
+	h1 {
+		font-family: 'Kumar One Outline', Arial;
+		color: #FF1177;
+		text-shadow: 2px 2px 5px #FF1177;
+		margin: 6px 0 0 10px;
+		max-width: 600px;
+		float: left;
+	}
+	
+	h2 {
+		margin: 0;
+	}
+
+	#topNav {
+		width: calc(100% - 8px);
+		height: 42px;
+		margin: 0;
+		background-color: #571B3C;
+		border: 4px outset #7A1E48;
+	}
+	
+	#status {
+		float: left;
+		margin-top: 10px;
+		margin-left: 30px;
+	}
+
+	#trackPicker {
+		float: left;
+		margin: 10px 5px 15px 10px;
+	}
+
+	#guiButton {
+		float: left;
+		margin: 11px 5px 15px 10px;
+	}
+	
+	#fsButton {
+		float: left;
+		margin: 11px 5px 15px 10px;
+	}
+
+	#canvasWrapper {
+		width: calc(100% - 100px);
+		height: 400px;
+		padding: 50px;
+		margin: 0;
+		background-color: #2B222C;
+	}
+
+  	canvas {
+  		float: left;
+        box-shadow: 4px 4px 8px rgba(0,0,0,0.5);
+        background: black;
+    }
+    
+     #guiBox {
+     	position: fixed;
+      	left: 740px;
+      	
+      	width: 342px;
+      	height: 392px;
+      	
+      	background: #5E4352;
+      	border: 4px outset #571B3C;
+      	
+      	/*If box gets wonky remove the padding*/
+      	padding-left: 5px;
+      	padding-top: 5px;
+      }
+      
+      #checkboxBox {
+      	width: 175px;
+      	background-color: gray;
+      	border: 4px inset #BB90E8;
+      	padding-left: 5px;
+      }
+      
+      .optionsCheckbox {
+      	font-size: 18px;
+      	margin: 5px auto;
+      }
+      
+      #playerWrapper {
+      	width: 740px;
+      	height: auto;
+      	padding: 10px 0;
+      }
+      
+      audio {
+      	display: block;
+      	margin: 0px auto;
+      }
+      
+      /*Media query for screens larger than 1024px*/
+     @media screen and (min-width: 1024px) { 
+     	
+     }
+      
+	</style>
+	<script>
+	    //Setup IIFE
+	    (function(){
+	        'use strict';
+	        
+	        //IIFE scope variables
+	        
+	        //Audio variables
+	        var NUM_SAMPLES = 256, audioElement, analyserNode, 
+	        SOUND_1 = 'media/New Adventure Theme.mp3', SOUND_2 = 'media/Peanuts Theme.mp3',
+	        SOUND_3 = 'media/The Picard Song.mp3';
+	        //Canvas variables
+	        var canvas, ctx, prevCanvasWidth, prevCanvasHeight;
+	        //Effect varibles
+	        
+	        function init(){
+	            //Setup canvas context variable
+	            canvas = document.querySelector('canvas');
+			    ctx = canvas.getContext("2d");
+			    //Set canvas ratio variables
+			    prevCanvasWidth = canvas.offsetWidth;
+			    prevCanvasHeight = canvas.offsetHeight;
+			    
+			    //Set variable for audio element
+			    audioElement = document.querySelector('audio');
+			    
+			    // Initialize analyser node withh helper function
+			    analyserNode = createWebAudioContextWithAnalyserNode(audioElement);
+			    setupUI();
+			
+			    // load and play default sound into audio element
+			    playStream( audioElement, SOUND_1);
+			
+			    update();
+	        }
+	        
+	        function update() {
+	            	// create a new array of 8-bit integers (0-255)
+					var data = new Uint8Array(NUM_SAMPLES/2); 
+					analyserNode.getByteFrequencyData(data);
+					
+					//Clear previous frame
+					ctx.clearRect(0,0, canvas.offsetWidth, canvas.offsetHeight); 
+					
+					var barWidth = 4;
+					var barSpacing = 1;
+					var barHeight = 100;
+					var topSpacing = 50;
+			
+					ctx.lineWidth = 8;
+					
+					//Called for each 0-255 value passed in
+					for(var i = 0; i < data.length; i++) { 
+						ctx.fillStyle = 'rgba(0,255,0,0.6)'; 
+			
+						ctx.fillRect(i * (barWidth + barSpacing),topSpacing + 256-data[i],barWidth,barHeight); 
+						//ctx.fillRect(640 - i * (barWidth + barSpacing), topSpacing + 256 - data[i] - 20, barWidth, barHeight);
+						
+				}
+				
+				// this schedules a call to the update() method in 1/60 seconds
+				requestAnimationFrame(update);
+	        }
+	        
+	        //HELPER FUNCTIONS
+	        
+	        function createWebAudioContextWithAnalyserNode(audioElement) {
+			    var audioCtx, analyserNode, sourceNode;
+			
+			    // create new AudioContext
+			    audioCtx = new (window.AudioContext || window.webkitAudioContext);
+			
+			    // create an analyser node
+			    analyserNode = audioCtx.createAnalyser();
+			    
+			    // fft stands for Fast Fourier Transform
+		    	analyserNode.fftSize = NUM_SAMPLES;
+			
+			    // this is where we hook up the <audio> element to the analyserNode
+			    sourceNode = audioCtx.createMediaElementSource(audioElement); 
+			    sourceNode.connect(analyserNode);
+			
+			    // here we connect to the destination i.e. speakers
+			    analyserNode.connect(audioCtx.destination);
+			    return analyserNode;
+	    	}
+	    	
+	    	function setupUI(){
+	    		document.querySelector("#guiButton").onclick = function(){
+			    	var guiBox = document.querySelector('#guiBox');
+			    	var canvasWrapper = document.querySelector('#canvasWrapper');
+			    	var playerWrapper = document.querySelector('#playerWrapper');
+			    	
+			    	if(guiBox.style.display == "none") {
+			    		console.dir("GUI Open Actions");
+			    		canvas.style.width = "640px";
+			    		canvas.style.height = "400px";
+			    		canvasWrapper.style.height = "400px";
+			    		playerWrapper.style.width = "740px";
+			    		guiBox.style.display = "initial";
+			    		canvas.style.margin = "0";
+			    	}
+			    	else {
+			    		console.dir("GUI Close Actions");
+			    		var cvWidth = (window.innerWidth - 100) + "px";
+			    		canvas.style.width = cvWidth;
+			    		
+			    		var newCanvasHeight = (prevCanvasHeight / prevCanvasWidth * canvas.offsetWidth) + "px";
+			    		console.dir("nch: " + newCanvasHeight);
+			    		canvas.style.height = newCanvasHeight;
+			    		canvasWrapper.style.height = newCanvasHeight;
+			    		guiBox.style.display = "none";
+			    		
+			    		console.dir(canvas.offsetHeight);
+			    		console.dir(window.innerHeight);
+			    		if(canvas.offsetHeight >= (window.innerHeight - 250)) {
+			    			console.dir("Condition reached");
+			    			canvas.style.height = (window.innerHeight - 250) + "px";
+			    			canvasWrapper.style.height = (window.innerHeight - 250) + "px";
+			    			//Set width with adjusted height
+			    			var adjWidth = (prevCanvasWidth / prevCanvasHeight * canvas.offsetHeight) + "px";
+			    			canvas.style.width = adjWidth;
+			    			
+			    			canvas.style.margin = "0 auto";
+			    		}
+			    		
+			    		playerWrapper.style.width = (canvas.offsetWidth + 100) + "px";
+			    	}
+		    	};
+		    	
+	    		document.querySelector("#trackSelect").onchange = function(e){
+		    		playStream(audioElement,e.target.value);
+		    	};
+			
+			    document.querySelector("#fsButton").onclick = function(){
+			    	requestFullscreen(canvas);
+		    	};
+			
+			    //Sliders and Checkboxes
+			
+		    }
+		    
+		    function playStream( audioElement, path) {
+		    	audioElement.src = path;
+		    	//audioElement.play();
+		    	audioElement.volume = 0.2;
+		    	document.querySelector('#status').innerHTML = "Now playing: " + path;
+		    }
+		    
+		    function requestFullscreen( element) {
+		    	if (element.requestFullscreen) {
+		    	  element.requestFullscreen();
+		    	} else if (element.mozRequestFullscreen) {
+		    	  element.mozRequestFullscreen();
+		    	} else if (element.mozRequestFullScreen) { // camel-cased 'S' was changed to 's' in spec
+		    	  element.mozRequestFullScreen();
+		    	} else if (element.webkitRequestFullscreen) {
+		    	  element.webkitRequestFullscreen();
+		    	}
+	    		// .. and do nothing if the method is not supported
+	    	}
+	    	
+	    	function getRandomColor(){
+   			var red = Math.round(Math.random()*254+1);
+   			var green = Math.round(Math.random()*254+1);
+   			var blue=Math.round(Math.random()*254+1);
+   			var color='rgb('+red+','+green+','+blue+')';
+   			//	var color='rgba('+red+','+green+','+blue+',0.50)'; // 0.50 alpha
+   			return color;
+		}
+	        
+	        //Call init on window load
+	        window.addEventListener("load",init);
+	    }());
+	
+    </script>
+</head>
+<body>
+	<nav id="topNav">
+		<h1>Audio Visualizer Project</h1>	
+		<p id="status">???</p>
+		<label id="trackPicker">Track: 
+			<select id="trackSelect">
+				<option value="media/New Adventure Theme.mp3">New Adventure Theme</option>
+				<option value="media/Peanuts Theme.mp3">Peanuts Theme</option>
+				<option value="media/The Picard Song.mp3">The Picard Song</option>
+			</select>
+		</label>
+		<button type="button" id="guiButton">Open GUI</button>
+		<button id="fsButton">Full Screen</button>
+	</nav>
+	<div id="canvasWrapper">
+		<canvas id="canvas" width="640" height="400"></canvas>
+		<div id="guiBox">
+			<h2>Effects here title</h2>
+			<div id="checkboxBox">
+				<div class="optionsCheckbox">
+					<span>
+						<label for="box1">Option 1</label>
+						<input type="checkbox" id="box1">
+					</span>
+				</div>
+				<div class="optionsCheckbox">
+					<span>
+						<label for="box2">Option 2</label>
+						<input type="checkbox" id="box2">
+					</span>
+				</div>
+			</div>
+			
+		</div>
+	</div>
+	<div id="playerWrapper">
+		<audio controls loop></audio>
+	</div>
+</body>
+</html>
