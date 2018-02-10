@@ -42,6 +42,9 @@
 
 
 	</style>
+	<!--Handlebars and JQuery needed for the Spotify Auth Code. It isn't used anywhere else-->
+	<script src="//cdnjs.cloudflare.com/ajax/libs/handlebars.js/2.0.0-alpha.1/handlebars.min.js"></script>
+	<script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
 	<script>
 	    //Setup IIFE
 	    (function(){
@@ -52,30 +55,34 @@
 	        //Audio variables
 	        var NUM_SAMPLES = 256, audioElement, analyserNode,
 	        SOUND_1 = 'media/New Adventure Theme.mp3', SOUND_2 = 'media/Peanuts Theme.mp3',
-	        SOUND_3 = 'media/The Picard Song.mp3';
+	        SOUND_3 = 'media/The Picard Song.mp3', SOUND_4 = 'https://p.scdn.co/mp3-preview/0533acec7e530a0d2cdd3227a193552482a177a6?cid=72e1db1a814c4881838c7f13b3a1528c';
 	        //Canvas variables
 	        var canvas, ctx;
 	        //Effect varibles
 
 	        function init(){
-	            //Setup canvas context variable
-	            canvas = document.querySelector('canvas');
-			    ctx = canvas.getContext("2d");
+	        	//Setup canvas context variable
+	          canvas = document.querySelector('canvas');
+			   		ctx = canvas.getContext("2d");
 
-			    ctx.canvas.width  = window.innerWidth;
-				ctx.canvas.height = window.innerHeight;
+			   		ctx.canvas.width  = window.innerWidth;
+						ctx.canvas.height = window.innerHeight;
 
-			    //Set variable for audio element
-			    audioElement = document.querySelector('audio');
+			    	//Set variable for audio element
+			    	audioElement = document.querySelector('audio');
 
-			    // Initialize analyser node withh helper function
-			    analyserNode = createWebAudioContextWithAnalyserNode(audioElement);
-			    setupUI();
+			    	// Initialize analyser node withh helper function
+			    	analyserNode = createWebAudioContextWithAnalyserNode(audioElement);
+			    	setupUI();
 
-			    // load and play default sound into audio element
-			    playStream( audioElement, SOUND_1);
+			    	// load and play default sound into audio element
+			    	playStream( audioElement, SOUND_1);
 
-			    update();
+						//Set the test button to return a preview link when clicked
+						var but = document.getElementById("test-button");
+            but.onclick = meh;
+
+			    	update();
 	        }
 
 	        function update() {
@@ -173,18 +180,58 @@
    				return color;
 				}
 
-				/*
-				The code for making an asynchronous GET Request came from here:
-				https://stackoverflow.com/questions/247483/http-get-request-in-javascript
-				*/
-				function httpGetAsync(theUrl, callback) {
-    			//var XMLHttpRequest = new XMLHttpRequest();
-    			XMLHttpRequest.open("GET", theUrl, true); // true for asynchronous
-	    		XMLHttpRequest.send(null);
-			}
+				//SPOTIFY API CODE
 
-	        //Call init on window load
-	        window.addEventListener("load",init);
+				/**
+         * Obtains parameters from the hash of the URL
+         * @return Object
+         */
+
+         var meh = function() {
+           $.ajax({
+             url: 'https://api.spotify.com/v1/tracks/7MUNNBJKYo3cdokp06wEOB',
+             headers: {
+               'Authorization': 'Bearer ' + access_token
+             }
+           }).done(function(data) {
+              console.dir(data.preview_url);
+           });
+         }
+
+
+        function getHashParams() {
+          var hashParams = {};
+          var e, r = /([^&;=]+)=?([^&;]*)/g,
+              q = window.location.hash.substring(1);
+          while ( e = r.exec(q)) {
+             hashParams[e[1]] = decodeURIComponent(e[2]);
+          }
+          return hashParams;
+        }
+
+				//Dont need variables for their js elements
+				/*
+        var userProfileSource = document.getElementById('user-profile-template').innerHTML,
+            userProfileTemplate = Handlebars.compile(userProfileSource),
+            userProfilePlaceholder = document.getElementById('user-profile');
+
+        var oauthSource = document.getElementById('oauth-template').innerHTML,
+            oauthTemplate = Handlebars.compile(oauthSource),
+            oauthPlaceholder = document.getElementById('oauth');
+				*/
+
+        var params = getHashParams();
+
+        var access_token = params.access_token,
+            refresh_token = params.refresh_token,
+            error = params.error;
+
+        if (error) {
+          alert('There was an error during the authentication');
+        }
+
+	    	//Call init on window load
+	     	window.addEventListener("load",init);
 	    }());
 
     </script>
@@ -198,8 +245,11 @@
 					<option value="media/New Adventure Theme.mp3">New Adventure Theme</option>
 					<option value="media/Peanuts Theme.mp3">Peanuts Theme</option>
 					<option value="media/The Picard Song.mp3">The Picard Song</option>
+					<option value="https://p.scdn.co/mp3-preview/0533acec7e530a0d2cdd3227a193552482a177a6?cid=72e1db1a814c4881838c7f13b3a1528c">Test</option>
 				</select>
 			</label>
+			<button id="test-button">Test</button>
+			<a href="/login">Login with Spotify</a>
 			<button id="fsButton">Go Full Screen</button><br>
 			<p id="status">???</p>
 		</div>
