@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8" />
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="An audio visualizer app, made by James DiGrazia for Project 1 of IGME 330">
+    <meta name="author" content="James DiGrazia">
+
+	<title>Project 1 - IGME 330</title>
+	<link rel="icon" type="image/png" href="../favicon.png">
+
+	<!--Import Google Fonts-->
+	<link href="https://fonts.googleapis.com/css?family=Kumar+One+Outline" rel="stylesheet">
+	<!--Import Font Awesome-->
+	<script defer src="https://use.fontawesome.com/releases/v5.0.6/js/all.js"></script>
+
+	<style>
+		body {
+			overflow: hidden;
+			width:  100%;
+  			height: 100%;
+  			margin: 0px;
+        	background: #eeeeee;
+        	font-family: tahoma, verdana, sans serif;
+      	}
+
+      	#guiBox {
+      		position: fixed;
+      		background-color: gray;
+      	}
+
+      	#controls{
+      		margin-left:10px;
+        	margin-top:10px;
+      	}
+
+      	canvas {
+        	background: black;
+    	}
+
+
+
+	</style>
+	<script>
+	    //Setup IIFE
+	    (function(){
+	        'use strict';
+
+	        //IIFE scope variables
+
+	        //Audio variables
+	        var NUM_SAMPLES = 256, audioElement, analyserNode,
+	        SOUND_1 = 'media/New Adventure Theme.mp3', SOUND_2 = 'media/Peanuts Theme.mp3',
+	        SOUND_3 = 'media/The Picard Song.mp3';
+	        //Canvas variables
+	        var canvas, ctx;
+	        //Effect varibles
+
+	        function init(){
+	            //Setup canvas context variable
+	            canvas = document.querySelector('canvas');
+			    ctx = canvas.getContext("2d");
+
+			    ctx.canvas.width  = window.innerWidth;
+				ctx.canvas.height = window.innerHeight;
+
+			    //Set variable for audio element
+			    audioElement = document.querySelector('audio');
+
+			    // Initialize analyser node withh helper function
+			    analyserNode = createWebAudioContextWithAnalyserNode(audioElement);
+			    setupUI();
+
+			    // load and play default sound into audio element
+			    playStream( audioElement, SOUND_1);
+
+			    update();
+	        }
+
+	        function update() {
+	            	// create a new array of 8-bit integers (0-255)
+					var data = new Uint8Array(NUM_SAMPLES/2);
+					analyserNode.getByteFrequencyData(data);
+
+					//Clear previous frame
+					ctx.clearRect(0,0, canvas.offsetWidth, canvas.offsetHeight);
+
+					var barWidth = canvas.offsetWidth  / 64;
+					var barSpacing = 1;
+					var barHeight = 100;
+					var topSpacing = 50;
+
+					ctx.lineWidth = 8;
+
+					//Called for each 0-255 value passed in
+					for(var i = 0; i < data.length; i++) {
+						ctx.fillStyle = 'rgba(0,255,0,0.6)';
+
+						ctx.fillRect(i * (barWidth + barSpacing),topSpacing + 256-data[i],barWidth,barHeight);
+						ctx.fillRect(canvas.offsetWidth - i * (barWidth + barSpacing), topSpacing + 256 - data[i] - 20, barWidth, barHeight);
+
+				}
+
+				// this schedules a call to the update() method in 1/60 seconds
+				requestAnimationFrame(update);
+	        }
+
+	        //HELPER FUNCTIONS
+
+	        function createWebAudioContextWithAnalyserNode(audioElement) {
+			    var audioCtx, analyserNode, sourceNode;
+
+			    // create new AudioContext
+			    audioCtx = new (window.AudioContext || window.webkitAudioContext);
+
+			    // create an analyser node
+			    analyserNode = audioCtx.createAnalyser();
+
+			    // fft stands for Fast Fourier Transform
+		    	analyserNode.fftSize = NUM_SAMPLES;
+
+			    // this is where we hook up the <audio> element to the analyserNode
+			    sourceNode = audioCtx.createMediaElementSource(audioElement);
+			    sourceNode.connect(analyserNode);
+
+			    // here we connect to the destination i.e. speakers
+			    analyserNode.connect(audioCtx.destination);
+			    return analyserNode;
+	    	}
+
+	    	function setupUI(){
+
+	    		document.querySelector("#trackSelect").onchange = function(e){
+		    		playStream(audioElement,e.target.value);
+		    	};
+
+			    document.querySelector("#fsButton").onclick = function(){
+			    	requestFullscreen(canvas);
+		    	};
+
+			    //Sliders and Checkboxes
+
+
+		    }
+
+		    function playStream( audioElement, path) {
+		    	audioElement.src = path;
+		    	//audioElement.play();
+		    	audioElement.volume = 0.2;
+		    	document.querySelector('#status').innerHTML = "Now playing: " + path;
+		    }
+
+		    function requestFullscreen( element) {
+		    	if (element.requestFullscreen) {
+		    	  element.requestFullscreen();
+		    	} else if (element.mozRequestFullscreen) {
+		    	  element.mozRequestFullscreen();
+		    	} else if (element.mozRequestFullScreen) { // camel-cased 'S' was changed to 's' in spec
+		    	  element.mozRequestFullScreen();
+		    	} else if (element.webkitRequestFullscreen) {
+		    	  element.webkitRequestFullscreen();
+		    	}
+	    		// .. and do nothing if the method is not supported
+	    	}
+
+	    	function getRandomColor() {
+   				var red = Math.round(Math.random()*254+1);
+   				var green = Math.round(Math.random()*254+1);
+   				var blue=Math.round(Math.random()*254+1);
+   				var color='rgb('+red+','+green+','+blue+')';
+   				//	var color='rgba('+red+','+green+','+blue+',0.50)'; // 0.50 alpha
+   				return color;
+				}
+
+				/*
+				The code for making an asynchronous GET Request came from here:
+				https://stackoverflow.com/questions/247483/http-get-request-in-javascript
+				*/
+				function httpGetAsync(theUrl, callback) {
+    			//var XMLHttpRequest = new XMLHttpRequest();
+    			XMLHttpRequest.open("GET", theUrl, true); // true for asynchronous
+	    		XMLHttpRequest.send(null);
+			}
+
+	        //Call init on window load
+	        window.addEventListener("load",init);
+	    }());
+
+    </script>
+</head>
+<body>
+	<div id="guiBox">
+		<div id="controls">
+			<audio controls loop></audio>
+			<label>Track:
+				<select id="trackSelect" >
+					<option value="media/New Adventure Theme.mp3">New Adventure Theme</option>
+					<option value="media/Peanuts Theme.mp3">Peanuts Theme</option>
+					<option value="media/The Picard Song.mp3">The Picard Song</option>
+				</select>
+			</label>
+			<button id="fsButton">Go Full Screen</button><br>
+			<p id="status">???</p>
+		</div>
+	</div>
+	<canvas id="canvas" width="640" height="400"></canvas>
+
+
+</body>
+</html>
