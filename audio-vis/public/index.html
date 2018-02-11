@@ -16,37 +16,80 @@
 	<script defer src="https://use.fontawesome.com/releases/v5.0.6/js/all.js"></script>
 
 	<style>
-		body {
-			overflow: hidden;
-			width:  100%;
+			body {
+				overflow: hidden;
+				width:  100%;
   			height: 100%;
   			margin: 0px;
-        	background: #eeeeee;
-        	font-family: tahoma, verdana, sans serif;
-      	}
+        background: #eeeeee;
+        font-family: tahoma, verdana, sans serif;
+      }
 
       	#guiBox {
       		position: fixed;
       		background-color: gray;
+					width: 400px;
       	}
+
+				audio {
+					width: 90%;
+					margin: 0 auto;
+				}
 
       	#controls{
       		margin-left:10px;
         	margin-top:10px;
       	}
 
-				.search-item {
+				#tracklist-container {
+					width: 100%;
+					margin-bottom: 5px;
+				}
 
+				#sp-search-bar {
+					width: 100%;
+					height: 25px;
+					margin-top: 5px;
+				}
+
+				#sp-search-section {
+					width: 60%;
+					float: left;
+				}
+
+				#sp-search-field {
+					width: 100%;
+				}
+
+				.search-item {
+					width: 80%;
+					text-overflow: ellipsis;
+					background-color: orange;
+					border: 3px solid purple;
+				}
+
+				#sp-search-button {
+					float: left;
+					margin-left: 15px;
 				}
 
 				#sp-login-button {
-					color: green
+					color: green;
 				}
 
       	canvas {
         	background: black;
     		}
 
+				.add-button {
+					background-color: green;
+					width: 20px;
+					height: 20px;
+				}
+
+				.add-button:hover {
+					background-color: blue;
+				}
 
 
 	</style>
@@ -64,12 +107,15 @@
 	        var NUM_SAMPLES = 256, audioElement, analyserNode,
 	        SOUND_1 = 'media/New Adventure Theme.mp3', SOUND_2 = 'media/Peanuts Theme.mp3',
 	        SOUND_3 = 'media/The Picard Song.mp3', SOUND_4 = 'https://p.scdn.co/mp3-preview/0533acec7e530a0d2cdd3227a193552482a177a6?cid=72e1db1a814c4881838c7f13b3a1528c';
-	        //Canvas variables
+					var addedSongs = [];
+					//Canvas variables
 	        var canvas, ctx;
 	        //Effect varibles
 
+					var defaultSongs;
+
 					//Spotify Element Variables
-					var spSearchButton, spSearchField;
+					var spSearchButton, spSearchField, spSearchBar, spSearchSection;
 
 	        function init(){
 	        	//Setup canvas context variable
@@ -86,21 +132,21 @@
 			    	analyserNode = createWebAudioContextWithAnalyserNode(audioElement);
 			    	setupUI();
 
+						//Add song name variables to the default songs
+						//defaultSongs = document.getElementsByClassName("default-song");
+						//defaultSongs[0].displayName = "New Adventure Theme";
+						//defaultSongs[1].displayName = "Peanuts Theme";
+						//defaultSongs[2].displayName = "The Picard Song";
+
 			    	// load and play default sound into audio element
 			    	playStream( audioElement, SOUND_1);
-
-						//Set the test button to return a preview link when clicked
-						var but = document.getElementById("test-button");
-            but.onclick = grabSongPreviewLink;
-
-						//Setup song link return button
-						//var slButton = document.getElementById("song-button");
-						//slButton.onclick = grabSongPreviewLink("7MUNNBJKYo3cdokp06wEOB");
 
 						//Set Closure-scoped variables for Spotify elements
 						spSearchButton = document.getElementById("sp-search-button");
 						spSearchButton.onclick = generateSearchResults;
 						spSearchField = document.getElementById('sp-search-field');
+						spSearchBar = document.getElementById('sp-search-bar');
+						spSearchSection = document.getElementById('sp-search-section');
 
 			    	update();
 	        }
@@ -159,7 +205,8 @@
 	    	function setupUI(){
 
 	    		document.querySelector("#trackSelect").onchange = function(e){
-		    		playStream(audioElement,e.target.value);
+						//console.dir(e.options[e.selectedIndex].displayName);
+		    		playStream(audioElement, e.target.value);
 		    	};
 
 			    document.querySelector("#fsButton").onclick = function(){
@@ -175,6 +222,9 @@
 		    	audioElement.src = path;
 		    	//audioElement.play();
 		    	audioElement.volume = 0.2;
+
+					//console.dir(defaultSongs[2]);
+
 		    	document.querySelector('#status').innerHTML = "Now playing: " + path;
 		    }
 
@@ -243,11 +293,15 @@
 				}
 
 				function songSearch(songQuery) {
+					var fixedQuery = "";
 					//Replace spaces with + to convert the query to the correct request format
 					for(var i = 0; i < songQuery.length; i++)
 					{
 						if(songQuery[i] == ' ')
-							songQuery[i] = '+';
+							fixedQuery += '+';
+						else {
+							fixedQuery += songQuery[i];
+						}
 					}
 
 					var searchLink = 'https://api.spotify.com/v1/search?q=' + songQuery + "&limit=5&type=track";
@@ -276,26 +330,38 @@
 							i--;
 					}
 
+					//Fix search bar height
+					spSearchBar.style.height = spSearchSection.offsetHeight + 10 + "px";
 
 					//Grab Search Query from input field
 					var searchQuery = spSearchField.value;
 
 					//Make API call with search query
-					songSearch(searchQuery);
+					if(searchQuery != "") //Don't search an empty query
+						songSearch(searchQuery);
 				}
 
 				var appendSearchResults = function(results) {
 					console.dir(results);
 					var songs = results.tracks.items;
-					//For each item returned
+
+					//If there are no results
+					if(songs.length == 0) {
+						//Create a div element
+						var nothingFoundDiv = document.createElement("div");
+						var nothingFoundTextNode = document.createTextNode("No songs matching your query.");
+						nothingFoundDiv.appendChild(nothingFoundTextNode);
+						nothingFoundDiv.appendAfter(spSearchField);
+					}
+
+					//For each song returned
 					for(var i = songs.length - 1; i >= 0; i--) {
 						//Create a div element
 						var searchItemElement = document.createElement("div");
-						//Add my searchItem class to it for styling
-						searchItemElement.classList.add("searchItem");
 
 						//Create string containing song name and artists
 						var currentSong = songs[i];
+
 						var songName = currentSong.name;
 						var artists = "";
 						for(var j = 0; j < currentSong.artists.length; j++) {
@@ -306,16 +372,94 @@
 							}
 						}
 
+						//Create span element and icon element,
+						//appendChild the span and icon to the searchItemElement
+
+						//Create search item text element
+						var searchItemSpan = document.createElement("span");
 						var searchItemText = songName + " by " + artists;
-						var searchItemTextNode = document.createTextNode(searchItemText);
+						searchItemSpan.innerHTML = searchItemText;
 
-						searchItemElement.appendChild(searchItemTextNode);
+						var searchItemIcon = document.createElement("div");
 
+						//Add important classes and id
+						searchItemIcon.classList.add("add-button");
+						var iconId = "song" + i;
+						searchItemIcon.id = iconId;
+
+						//Add event handler for adding the searchItem
+						searchItemIcon.onclick = addSongHandlerWrapper(currentSong);
+
+						//Append elements
+						searchItemElement.appendChild(searchItemSpan);
+						searchItemElement.appendChild(searchItemIcon);
+
+						//Add my searchItem class to it for styling
+						searchItemElement.classList.add("search-item");
+
+						//Add the search item to the search result area
 						searchItemElement.appendAfter(spSearchField);
 					}
 
-					//Add song links
+					//Fix search bar height
+					spSearchBar.style.height = spSearchSection.offsetHeight + 10 + "px";
 				}
+
+				/**
+			 * Passing parameters into an event handler's function causes issues
+			 * because a function with paranthesis will get called on that line.
+			 * This causes the button's event handler to just return our function's
+			 * return value when triggered instead of calling our function.
+			 *
+			 * To fix this we had to create a wrapper containing our desired parameter
+			 * and set the return value of our wrapper equal to the function we
+			 * would like to call
+			 *
+			 * This solution is borrowed from my Shape Viewer Exercise and from here
+			 * /http://2cor214.blogspot.com/2010/08/passing-arguments-to-event-handler-in.html
+			**/
+			var addSongHandlerWrapper = function (song) {
+				var eventHandler = function()
+				{
+					addSongToList(song);
+				}
+				return eventHandler;
+			}
+
+			function addSongToList(song) {
+
+				//Add the song to our Closure variable (addedSongs)
+				addedSongs[addedSongs.length] = song;
+				//console.dir(addedSongs);
+
+				//Delete all added options elements
+				var songList = document.getElementById('trackSelect');
+
+				//Removes all added songs
+				for(var i = 0; i < songList.childNodes.length; i++) {
+					//If the childNode has a classList and contains the 'added-song' class
+					if(songList.childNodes[i].classList != null) {
+						if(songList.childNodes[i].classList.contains("added-song"))
+						{
+							//Delete song option element and iterate backwards
+							songList.removeChild(songList.childNodes[i]);
+							i--;
+						}
+					}
+
+				}
+
+				//Create new <option> elements for every added song and append them
+				for(var i = 0; i < addedSongs.length; i++) {
+					var songOption = document.createElement("option");
+					songOption.value = addedSongs[i].preview_url;
+					songOption.displayName = addedSongs[i].name;
+					songOption.innerHTML = addedSongs[i].name;
+					songOption.classList.add("added-song");
+					console.dir(songOption);
+					songList.appendChild(songOption);
+				}
+			}
 
 	    	//Call init on window load
 	     	window.addEventListener("load",init);
@@ -332,23 +476,27 @@
 <body>
 	<div id="guiBox">
 		<div id="controls">
+
 			<audio controls loop></audio>
-			<label>Track List:
-				<select id="trackSelect" >
-					<option value="media/New Adventure Theme.mp3">New Adventure Theme</option>
-					<option value="media/Peanuts Theme.mp3">Peanuts Theme</option>
-					<option value="media/The Picard Song.mp3">The Picard Song</option>
-					<option value="https://p.scdn.co/mp3-preview/0533acec7e530a0d2cdd3227a193552482a177a6?cid=72e1db1a814c4881838c7f13b3a1528c">Test</option>
-				</select>
-			</label>
-			<button id="test-button">Test</button>
 
-			<div id="sp-search-section">
-				<input type='text' id="sp-search-field"/>
+			<div id="tracklist-container">
+				<label>Track List:
+					<select id="trackSelect" >
+						<option value="media/New Adventure Theme.mp3" class="default-song">New Adventure Theme</option>
+						<option value="media/Peanuts Theme.mp3" class="default-song">Peanuts Theme</option>
+						<option value="media/The Picard Song.mp3" class="default-song">The Picard Song</option>
+					</select>
+				</label>
 			</div>
-			<div id="sp-search-button"><i class="fas fa-search"></i></div>
 
-			<button id="song-button">Get Song</button>
+			<span>Search Spotify for Songs: </span>
+			<div id="sp-search-bar">
+				<div id="sp-search-section">
+					<input type='text' id="sp-search-field"/>
+				</div>
+				<div id="sp-search-button"><i class="fas fa-search"></i></div>
+			</div>
+
 			<a href="/login" id="sp-login-button"><i class="fab fa-spotify fa-2x"></i></a>
 			<button id="fsButton">Go Full Screen</button><br>
 			<p id="status">???</p>
