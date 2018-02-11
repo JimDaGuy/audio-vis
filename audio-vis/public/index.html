@@ -35,9 +35,17 @@
         	margin-top:10px;
       	}
 
+				.search-item {
+
+				}
+
+				#sp-login-button {
+					color: green
+				}
+
       	canvas {
         	background: black;
-    	}
+    		}
 
 
 
@@ -60,6 +68,9 @@
 	        var canvas, ctx;
 	        //Effect varibles
 
+					//Spotify Element Variables
+					var spSearchButton, spSearchField;
+
 	        function init(){
 	        	//Setup canvas context variable
 	          canvas = document.querySelector('canvas');
@@ -80,7 +91,16 @@
 
 						//Set the test button to return a preview link when clicked
 						var but = document.getElementById("test-button");
-            but.onclick = meh;
+            but.onclick = grabSongPreviewLink;
+
+						//Setup song link return button
+						//var slButton = document.getElementById("song-button");
+						//slButton.onclick = grabSongPreviewLink("7MUNNBJKYo3cdokp06wEOB");
+
+						//Set Closure-scoped variables for Spotify elements
+						spSearchButton = document.getElementById("sp-search-button");
+						spSearchButton.onclick = generateSearchResults;
+						spSearchField = document.getElementById('sp-search-field');
 
 			    	update();
 	        }
@@ -187,18 +207,6 @@
          * @return Object
          */
 
-         var meh = function() {
-           $.ajax({
-             url: 'https://api.spotify.com/v1/tracks/7MUNNBJKYo3cdokp06wEOB',
-             headers: {
-               'Authorization': 'Bearer ' + access_token
-             }
-           }).done(function(data) {
-              console.dir(data.preview_url);
-           });
-         }
-
-
         function getHashParams() {
           var hashParams = {};
           var e, r = /([^&;=]+)=?([^&;]*)/g,
@@ -208,17 +216,6 @@
           }
           return hashParams;
         }
-
-				//Dont need variables for their js elements
-				/*
-        var userProfileSource = document.getElementById('user-profile-template').innerHTML,
-            userProfileTemplate = Handlebars.compile(userProfileSource),
-            userProfilePlaceholder = document.getElementById('user-profile');
-
-        var oauthSource = document.getElementById('oauth-template').innerHTML,
-            oauthTemplate = Handlebars.compile(oauthSource),
-            oauthPlaceholder = document.getElementById('oauth');
-				*/
 
         var params = getHashParams();
 
@@ -230,9 +227,105 @@
           alert('There was an error during the authentication');
         }
 
+				//My custom Spotify CODE
+
+				var grabSongPreviewLink = function(songCode) {
+					var requestLink = 'https://api.spotify.com/v1/tracks/' + songCode;
+					$.ajax({
+						url: requestLink,
+						headers: {
+							'Authorization': 'Bearer ' + access_token
+						}
+					}).done(function(data) {
+
+						return data.preview_url;
+					});
+				}
+
+				function songSearch(songQuery) {
+					//Replace spaces with + to convert the query to the correct request format
+					for(var i = 0; i < songQuery.length; i++)
+					{
+						if(songQuery[i] == ' ')
+							songQuery[i] = '+';
+					}
+
+					var searchLink = 'https://api.spotify.com/v1/search?q=' + songQuery + "&limit=5&type=track";
+					$.ajax({
+						url: searchLink,
+						headers: {
+							'Authorization': 'Bearer ' + access_token
+						},
+						success: appendSearchResults
+					}).success(function(data) {
+ 						//return data;
+					});
+				}
+
+				var generateSearchResults = function(){
+					console.dir("Generate Search Results");
+
+					//delete old search results
+
+					var searchSection = document.getElementById('sp-search-section');
+					//Grab every div inside my search section, leaving my text section alone
+					var searchSectionItems = searchSection.getElementsByTagName('div');
+					//Remove previous search items from the search section
+					for(var i = 0; i < searchSectionItems.length; i++) {
+							searchSection.removeChild(searchSectionItems[i]);
+							i--;
+					}
+
+
+					//Grab Search Query from input field
+					var searchQuery = spSearchField.value;
+
+					//Make API call with search query
+					songSearch(searchQuery);
+				}
+
+				var appendSearchResults = function(results) {
+					console.dir(results);
+					var songs = results.tracks.items;
+					//For each item returned
+					for(var i = songs.length - 1; i >= 0; i--) {
+						//Create a div element
+						var searchItemElement = document.createElement("div");
+						//Add my searchItem class to it for styling
+						searchItemElement.classList.add("searchItem");
+
+						//Create string containing song name and artists
+						var currentSong = songs[i];
+						var songName = currentSong.name;
+						var artists = "";
+						for(var j = 0; j < currentSong.artists.length; j++) {
+							if(j != (currentSong.artists.length - 1))
+								artists += currentSong.artists[j].name + ", ";
+							else {
+								artists += currentSong.artists[j].name;
+							}
+						}
+
+						var searchItemText = songName + " by " + artists;
+						var searchItemTextNode = document.createTextNode(searchItemText);
+
+						searchItemElement.appendChild(searchItemTextNode);
+
+						searchItemElement.appendAfter(spSearchField);
+					}
+
+					//Add song links
+				}
+
 	    	//Call init on window load
 	     	window.addEventListener("load",init);
 	    }());
+
+			//Borrowed this function from
+			// https://stackoverflow.com/questions/4793604/how-to-insert-an-element-after-another-element-in-javascript-without-using-a-lib
+			Element.prototype.appendAfter = function (element) {
+  			element.parentNode.insertBefore(this, element.nextSibling);
+			},false;
 
     </script>
 </head>
@@ -240,7 +333,7 @@
 	<div id="guiBox">
 		<div id="controls">
 			<audio controls loop></audio>
-			<label>Track:
+			<label>Track List:
 				<select id="trackSelect" >
 					<option value="media/New Adventure Theme.mp3">New Adventure Theme</option>
 					<option value="media/Peanuts Theme.mp3">Peanuts Theme</option>
@@ -249,7 +342,14 @@
 				</select>
 			</label>
 			<button id="test-button">Test</button>
-			<a href="/login">Login with Spotify</a>
+
+			<div id="sp-search-section">
+				<input type='text' id="sp-search-field"/>
+			</div>
+			<div id="sp-search-button"><i class="fas fa-search"></i></div>
+
+			<button id="song-button">Get Song</button>
+			<a href="/login" id="sp-login-button"><i class="fab fa-spotify fa-2x"></i></a>
 			<button id="fsButton">Go Full Screen</button><br>
 			<p id="status">???</p>
 		</div>
