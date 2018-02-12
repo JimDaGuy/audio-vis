@@ -127,19 +127,27 @@
 
 			    	//Set variable for audio element
 			    	audioElement = document.querySelector('audio');
+						/*
+						Google Chrome had trouble requesting songs from the Spotify Preview links.
+						After some googling I found this one-line fix
+						Source: https://stackoverflow.com/questions/31308679/mediaelementaudiosource-outputs-zeros-due-to-cors-access-restrictions-local-mp3
+						*/
+						audioElement.crossOrigin = "anonymous";
 
-			    	// Initialize analyser node withh helper function
+			    	// Initialize analyser node with helper function
 			    	analyserNode = createWebAudioContextWithAnalyserNode(audioElement);
 			    	setupUI();
 
 						//Add song name variables to the default songs
-						//defaultSongs = document.getElementsByClassName("default-song");
-						//defaultSongs[0].displayName = "New Adventure Theme";
-						//defaultSongs[1].displayName = "Peanuts Theme";
-						//defaultSongs[2].displayName = "The Picard Song";
+						defaultSongs = document.getElementsByClassName("default-song");
+						defaultSongs[0].displayName = "New Adventure Theme";
+						defaultSongs[1].displayName = "Peanuts Theme";
+						defaultSongs[2].displayName = "The Picard Song";
 
 			    	// load and play default sound into audio element
-			    	playStream( audioElement, SOUND_1);
+						var firstOption = document.getElementById("defaultOption");
+						console.dir(defaultSongs[0]);
+			    	playStream( audioElement, defaultSongs[0]);
 
 						//Set Closure-scoped variables for Spotify elements
 						spSearchButton = document.getElementById("sp-search-button");
@@ -195,7 +203,8 @@
 
 			    // this is where we hook up the <audio> element to the analyserNode
 			    sourceNode = audioCtx.createMediaElementSource(audioElement);
-			    sourceNode.connect(analyserNode);
+
+					sourceNode.connect(analyserNode);
 
 			    // here we connect to the destination i.e. speakers
 			    analyserNode.connect(audioCtx.destination);
@@ -205,8 +214,9 @@
 	    	function setupUI(){
 
 	    		document.querySelector("#trackSelect").onchange = function(e){
-						//console.dir(e.options[e.selectedIndex].displayName);
-		    		playStream(audioElement, e.target.value);
+						//console.dir(e.options[e.selectedIndex].text);
+						//console.dir(e.target[e.target.selectedIndex]);
+		    		playStream(audioElement, e.target);
 		    	};
 
 			    document.querySelector("#fsButton").onclick = function(){
@@ -218,14 +228,15 @@
 
 		    }
 
-		    function playStream( audioElement, path) {
-		    	audioElement.src = path;
+		    function playStream( audioElement, targ) {
+		    	audioElement.src = targ.value;
 		    	//audioElement.play();
 		    	audioElement.volume = 0.2;
-
-					//console.dir(defaultSongs[2]);
-
-		    	document.querySelector('#status').innerHTML = "Now playing: " + path;
+					
+					if(targ.displayName != null)
+		    		document.querySelector('#status').innerHTML = "Now playing: " + targ.displayName;
+					else
+						document.querySelector('#status').innerHTML = "Now playing: " + targ[targ.selectedIndex].displayName;
 		    }
 
 		    function requestFullscreen( element) {
@@ -482,7 +493,7 @@
 			<div id="tracklist-container">
 				<label>Track List:
 					<select id="trackSelect" >
-						<option value="media/New Adventure Theme.mp3" class="default-song">New Adventure Theme</option>
+						<option value="media/New Adventure Theme.mp3" class="default-song first-song" id="defaultOption">New Adventure Theme</option>
 						<option value="media/Peanuts Theme.mp3" class="default-song">Peanuts Theme</option>
 						<option value="media/The Picard Song.mp3" class="default-song">The Picard Song</option>
 					</select>
