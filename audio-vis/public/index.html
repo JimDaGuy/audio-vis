@@ -21,7 +21,7 @@
 				width:  100%;
   			height: 100%;
   			margin: 0px;
-        background: #eeeeee;
+        background: #000000;
         font-family: tahoma, verdana, sans serif;
       }
 
@@ -29,6 +29,7 @@
       		position: fixed;
       		background-color: gray;
 					width: 400px;
+					z-index: 5;
       	}
 
 				audio {
@@ -77,8 +78,20 @@
 					color: green;
 				}
 
-      	canvas {
-        	background: black;
+				#settings {
+					margin-top: 10px;
+				}
+
+				video {
+					position: fixed;
+					visibility: hidden;
+					z-index: -50;
+					background: rgba(0, 0, 0, 0);
+				}
+
+      	#canvas {
+        	background: rgba(0, 0, 0, 0);
+					z-index: 2;
     		}
 
 				.add-button {
@@ -111,11 +124,15 @@
 					//Canvas variables
 	        var canvas, ctx;
 	        //Effect varibles
+					var cosmicChicken = false, curves = false;
 
 					var defaultSongs;
 
 					//Spotify Element Variables
 					var spSearchButton, spSearchField, spSearchBar, spSearchSection;
+
+					//Video elements
+					var videoElement;
 
 	        function init(){
 	        	//Setup canvas context variable
@@ -124,6 +141,11 @@
 
 			   		ctx.canvas.width  = window.innerWidth;
 						ctx.canvas.height = window.innerHeight;
+
+						videoElement = document.querySelector('video');
+
+						videoElement.width = 5/6 * window.innerWidth;
+						videoElement.height = 5/6 * window.innerHeight;
 
 			    	//Set variable for audio element
 			    	audioElement = document.querySelector('audio');
@@ -146,7 +168,7 @@
 
 			    	// load and play default sound into audio element
 						var firstOption = document.getElementById("defaultOption");
-						console.dir(defaultSongs[0]);
+						//console.dir(defaultSongs[0]);
 			    	playStream( audioElement, defaultSongs[0]);
 
 						//Set Closure-scoped variables for Spotify elements
@@ -156,11 +178,11 @@
 						spSearchBar = document.getElementById('sp-search-bar');
 						spSearchSection = document.getElementById('sp-search-section');
 
-			    	update();
+						update();
 	        }
 
-	        function update() {
-	            	// create a new array of 8-bit integers (0-255)
+	   		function update() {
+	       	// create a new array of 8-bit integers (0-255)
 					var data = new Uint8Array(NUM_SAMPLES/2);
 					analyserNode.getByteFrequencyData(data);
 
@@ -174,6 +196,9 @@
 
 					ctx.lineWidth = 8;
 
+					if(cosmicChicken)
+						drawVideo();
+
 					//Called for each 0-255 value passed in
 					for(var i = 0; i < data.length; i++) {
 						ctx.fillStyle = 'rgba(0,255,0,0.6)';
@@ -181,15 +206,20 @@
 						ctx.fillRect(i * (barWidth + barSpacing),topSpacing + 256-data[i],barWidth,barHeight);
 						ctx.fillRect(canvas.offsetWidth - i * (barWidth + barSpacing), topSpacing + 256 - data[i] - 20, barWidth, barHeight);
 
-				}
+						if(curves && i <= (data.length - 30)) {
+							//Custom Drawing Code
+							drawCurves(data[i], (data.length - 30), i, 250, "white", 0);
+							drawCurves(data[i], (data.length - 30), i, 200, "purple", 0);
+						}
+					}
 
-				// this schedules a call to the update() method in 1/60 seconds
-				requestAnimationFrame(update);
-	        }
+					// this schedules a call to the update() method in 1/60 seconds
+					requestAnimationFrame(update);
+	     	}
 
 	        //HELPER FUNCTIONS
 
-	        function createWebAudioContextWithAnalyserNode(audioElement) {
+	    	function createWebAudioContextWithAnalyserNode(audioElement) {
 			    var audioCtx, analyserNode, sourceNode;
 
 			    // create new AudioContext
@@ -225,6 +255,15 @@
 
 			    //Sliders and Checkboxes
 
+					//Cosmic Chicken
+		 			document.getElementById('cosmicChickenBox').onchange = function(e){
+			 			cosmicChicken = e.target.checked;
+		 			};
+
+					//Curves
+					document.getElementById('curvesBox').onchange = function(e){
+			 			curves = e.target.checked;
+		 			};
 
 		    }
 
@@ -232,7 +271,7 @@
 		    	audioElement.src = targ.value;
 		    	//audioElement.play();
 		    	audioElement.volume = 0.2;
-					
+
 					if(targ.displayName != null)
 		    		document.querySelector('#status').innerHTML = "Now playing: " + targ.displayName;
 					else
@@ -259,6 +298,106 @@
    				var color='rgb('+red+','+green+','+blue+')';
    				//	var color='rgba('+red+','+green+','+blue+',0.50)'; // 0.50 alpha
    				return color;
+				}
+
+				//DRAWING HELPER FUNCTIONS
+				function drawCurves(currData, dataLength, dataIndex, radius, stColor, degreeOffset) {
+					ctx.save();
+
+					//Variables I can make parameters for later
+					var center = { x: canvas.width / 2, y: canvas.height / 2 };
+					var radiusCoeff = currData / 256;
+					var dcMaxRadius = radiusCoeff * radius;
+					var radiansPerInterval = (2 * Math.PI) / dataLength;
+				var radianOffset = degreeOffset / 180 * Math.PI;
+
+
+				//Change the color if the song hits highs or the color has stayed the same for too long
+				/*
+				if(currData == 250 || colorCounter >= colorTime) {
+					bigStrokeColor = getRandomColor();
+					smallStrokeColor = getRandomColor();
+					colorCounter = 0;
+				}
+				*/
+
+				//Create variables for the radial value of three different angles
+				if(dataIndex == 0)
+					var prevRad = ((2 * Math.PI) - radiansPerInterval) - (1/16 * Math.PI) + radianOffset;
+				else
+					var prevRad = (radiansPerInterval * (dataIndex - 1)) - (1/16 * Math.PI) + radianOffset;
+
+				var currRad = (radiansPerInterval * dataIndex) + radianOffset;
+
+				//Set point for further out radian
+				if(dataIndex == (dataLength - 1))
+					var futureRad = 0 + (1/16 * Math.PI) + radianOffset;
+				else
+					var futureRad = (radiansPerInterval * (dataIndex + 1)) + (1/16 * Math.PI)  + radianOffset;
+
+					//Find points we need
+					var firstCircRadius = 1/4 * dcMaxRadius;
+					var secondCircRadius = 1/2 * dcMaxRadius;
+					var thirdCircRadius = 3/4 * dcMaxRadius;
+
+					var firstCircPoint = {};
+					firstCircPoint.x = center.x + firstCircRadius * Math.cos(currRad);
+					firstCircPoint.y = center.y - firstCircRadius * Math.sin(currRad);
+
+					var secondCircPoint = {};
+					secondCircPoint.x = center.x + secondCircRadius * Math.cos(prevRad);
+					secondCircPoint.y = center.y - secondCircRadius * Math.sin(prevRad);
+
+					var thirdCircPoint = {};
+					thirdCircPoint.x = center.x + thirdCircRadius * Math.cos(currRad);
+					thirdCircPoint.y = center.y - thirdCircRadius * Math.sin(currRad);
+
+					var fourthCircPoint = {};
+					fourthCircPoint.x = center.x + dcMaxRadius * Math.cos(prevRad);
+					fourthCircPoint.y = center.y - dcMaxRadius * Math.sin(prevRad);
+
+					ctx.strokeStyle = stColor;
+					//Draw quadratic curves
+					ctx.beginPath();
+					ctx.moveTo(center.x, center.y);
+					ctx.quadraticCurveTo(secondCircPoint.x, secondCircPoint.y, thirdCircPoint.x, thirdCircPoint.y);
+					ctx.stroke();
+					ctx.beginPath();
+					ctx.moveTo( firstCircPoint.x, firstCircPoint.y);
+					ctx.quadraticCurveTo(thirdCircPoint.x, thirdCircPoint.y, fourthCircPoint.x, fourthCircPoint.y);
+					ctx.stroke();
+
+					ctx.restore();
+				}
+
+				//VIDEO ELEMENT HELPER FUNCTIONS
+
+				function drawVideo() {
+					ctx.drawImage(videoElement, 0, 0, videoElement.clientWidth, videoElement.clientHeight);
+					var imageData = ctx.getImageData( 0, 0, videoElement.clientWidth, videoElement.clientHeight);
+
+					var data = imageData.data;
+					var length = data.length;
+					var width = imageData.width;
+
+					//Iterates once every 4 pixels to greatly improve performance
+					for (var i = 0; i < length; i+= 4) {
+	      		var green = data[i * 4 + 1];
+	      		if (green > 150) {
+							data[i * 4 + 3] = 0;
+							data[i * 4 + 7] = 0;
+							data[i * 4 + 11] = 0;
+							data[i * 4 + 15] = 0;
+						}
+
+						// invert
+						var red = data[i], green = data[i+1], blue = data[i+2];
+						data[i] = 255 - red;  		// set red value
+						data[i+1] = 255 - green;  		// set blue value
+						data[i+2] = 255 - blue;		// set green value
+	    		}
+
+					ctx.putImageData(imageData, 0, 0);
 				}
 
 				//SPOTIFY API CODE
@@ -510,9 +649,29 @@
 
 			<a href="/login" id="sp-login-button"><i class="fab fa-spotify fa-2x"></i></a>
 			<button id="fsButton">Go Full Screen</button><br>
+
+			<div id="settings">
+				<span>Overlay Effects</span>
+				<div>
+					<span>
+						<label for="cosmicChickenBox">Cosmic Chicken</label>
+						<input type="checkbox" id="cosmicChickenBox">
+					</span>
+				</div>
+				<div>
+					<span>
+						<label for="curvesBox">Curves</label>
+						<input type="checkbox" id="curvesBox">
+					</span>
+				</div>
+			</div>
+
 			<p id="status">???</p>
 		</div>
 	</div>
+	<video id="video" autoplay loop muted/>
+		<source src="media/chicken.mp4" type="video/mp4">
+	</video>
 	<canvas id="canvas" width="640" height="400"></canvas>
 
 
