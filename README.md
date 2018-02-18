@@ -1,4 +1,6 @@
 # Audio Visualizer
+## About
+This web app can be found at https://audiovis.csh.rit.edu.
 
 ## Running Locally
 To run this web app locally, start by installing node here: https://nodejs.org/en/.
