@@ -118,6 +118,10 @@
         margin-top: 10px;
       }
 
+      #visual-controls {
+
+      }
+
       .nav-item {
         background-color: #1E6075;
         width: 33.33%;
@@ -142,6 +146,7 @@
         margin-left: 10px;
         padding-top: 10px;
         background-color: #2DA89C;
+        height: 10vh;
       }
 
       #sp-results-box {
