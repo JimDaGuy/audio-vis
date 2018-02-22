@@ -17,7 +17,7 @@
     var defaultSongs;
 
     //Spotify Element Variables
-    var spSearchButton, spSearchField, spSearchBar, spSearchSection;
+    var spSearchButton, spSearchField, spResultsBox, spSearches, spAppendSpan;
 
     //Video elements
     var videoElement;
@@ -61,10 +61,11 @@
 
       //Set Closure-scoped variables for Spotify elements
       spSearchButton = document.getElementById("sp-search-button");
-      spSearchButton.onclick = generateSearchResults;
       spSearchField = document.getElementById('sp-search-field');
-      spSearchBar = document.getElementById('sp-search-bar');
-      spSearchSection = document.getElementById('sp-search-section');
+      spSearchField.oninput = generateSearchResults;
+      spResultsBox = document.getElementById('sp-results-box');
+      spSearches = document.getElementById('sp-searches');
+      spAppendSpan = document.getElementById('sp-append-span');
 
       update();
     }
@@ -131,15 +132,22 @@
 
   function setupUI(){
 
+    //Navbar Dropdowns
+    document.querySelector("#tracklist-button").onclick = tlDropdown;
+
+    document.querySelector("#effects-button").onclick = efDropdown;
+
     document.querySelector("#trackSelect").onchange = function(e){
       //console.dir(e.options[e.selectedIndex].text);
       //console.dir(e.target[e.target.selectedIndex]);
       playStream(audioElement, e.target);
     };
 
+    /*
     document.querySelector("#fsButton").onclick = function(){
       requestFullscreen(canvas);
     };
+    */
 
     //Sliders and Checkboxes
 
@@ -186,6 +194,35 @@
     var color='rgb('+red+','+green+','+blue+')';
     //	var color='rgba('+red+','+green+','+blue+',0.50)'; // 0.50 alpha
     return color;
+  }
+
+/*
+Borrowed this short function to determine if an element is displayed or nothing
+Used for my dropdown buttons
+Found here:
+https://stackoverflow.com/questions/19669786/check-if-element-is-visible-in-dom
+*/
+  function isHidden(el) {
+    var style = window.getComputedStyle(el);
+    return (style.display === 'none')
+  }
+
+  function tlDropdown() {
+    var tlDropdown = document.getElementById("tracklist-dropdown");
+    if(isHidden(tlDropdown)){
+      tlDropdown.style.display = "initial";
+    }
+    else
+      tlDropdown.style.display = "none";
+  }
+
+  function efDropdown() {
+    var efDropdown = document.getElementById("effects-dropdown");
+    if(isHidden(efDropdown)){
+      efDropdown.style.display = "initial";
+    }
+    else
+      efDropdown.style.display = "none";
   }
 
   //DRAWING HELPER FUNCTIONS
@@ -313,6 +350,23 @@
 
   if (error) {
     alert('There was an error during the authentication');
+  } else {
+    if(access_token) {
+      console.log("User should be logged in now");
+      var loggedOutElements = document.getElementsByClassName("logged-out");
+      loggedOutElements[0].style.display = "none";
+      var loggedInElements = document.getElementsByClassName("logged-in");
+      loggedInElements[0].style.display = "initial";
+      loggedInElements[1].style.display = "initial";
+    }
+    else {
+          console.log("User should be logged out now");
+          var loggedOutElements = document.getElementsByClassName("logged-out");
+          loggedOutElements[0].style.display = "initial";
+          var loggedInElements = document.getElementsByClassName("logged-in");
+          loggedInElements[0].style.display = "none";
+          loggedInElements[1].style.display = "none";
+    }
   }
 
   //My custom Spotify CODE
@@ -328,6 +382,40 @@
 
       return data.preview_url;
     });
+  }
+
+  var generateSearchResults = function(){
+    console.dir("Generate Search Results");
+
+    //Make dropdown visible
+    spResultsBox.style.display = "initial";
+
+    //delete old search results
+
+    var searchSection = document.getElementById('sp-searches');
+    //Grab every div inside my search section, leaving my text section alone
+    var searchSectionItems = searchSection.getElementsByTagName('div');
+    //Remove previous search items from the search section
+    for(var i = 0; i < searchSectionItems.length; i++) {
+        searchSection.removeChild(searchSectionItems[i]);
+        i--;
+    }
+
+    //Fix search bar height
+    spResultsBox.style.height = spSearches.offsetHeight + 20 + "px";
+
+    //Grab Search Query from input field
+    var searchQuery = spSearchField.value;
+
+    //Make API call with search query
+    if(searchQuery != "")  //Don't search an empty query
+    {
+      spResultsBox.style.display = "initial";
+      songSearch(searchQuery);
+    }
+    else
+      spResultsBox.style.display = "none";
+
   }
 
   function songSearch(songQuery) {
@@ -354,31 +442,6 @@
     });
   }
 
-  var generateSearchResults = function(){
-    console.dir("Generate Search Results");
-
-    //delete old search results
-
-    var searchSection = document.getElementById('sp-search-section');
-    //Grab every div inside my search section, leaving my text section alone
-    var searchSectionItems = searchSection.getElementsByTagName('div');
-    //Remove previous search items from the search section
-    for(var i = 0; i < searchSectionItems.length; i++) {
-        searchSection.removeChild(searchSectionItems[i]);
-        i--;
-    }
-
-    //Fix search bar height
-    spSearchBar.style.height = spSearchSection.offsetHeight + 10 + "px";
-
-    //Grab Search Query from input field
-    var searchQuery = spSearchField.value;
-
-    //Make API call with search query
-    if(searchQuery != "") //Don't search an empty query
-      songSearch(searchQuery);
-  }
-
   var appendSearchResults = function(results) {
     console.dir(results);
     var songs = results.tracks.items;
@@ -389,7 +452,9 @@
       var nothingFoundDiv = document.createElement("div");
       var nothingFoundTextNode = document.createTextNode("No songs matching your query.");
       nothingFoundDiv.appendChild(nothingFoundTextNode);
-      nothingFoundDiv.appendAfter(spSearchField);
+
+      //Add div to the search box
+      nothingFoundDiv.appendAfter(spAppendSpan);
     }
 
     //For each song returned
@@ -436,11 +501,11 @@
       searchItemElement.classList.add("search-item");
 
       //Add the search item to the search result area
-      searchItemElement.appendAfter(spSearchField);
+      searchItemElement.appendAfter(spAppendSpan);
     }
 
     //Fix search bar height
-    spSearchBar.style.height = spSearchSection.offsetHeight + 10 + "px";
+    spResultsBox.style.height = spSearches.offsetHeight + 20 + "px";
   }
 
   /**

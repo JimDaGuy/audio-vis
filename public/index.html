@@ -12,44 +12,76 @@
 
 	<!--Import Google Fonts-->
 	<link href="https://fonts.googleapis.com/css?family=Kumar+One+Outline" rel="stylesheet">
+	<link href="https://fonts.googleapis.com/css?family=Shrikhand" rel="stylesheet">
 	<!--Import Font Awesome-->
 	<script defer src="https://use.fontawesome.com/releases/v5.0.6/js/all.js"></script>
 
+	<!--Import Bootswatch-->
+	<link rel="stylesheet" href="https://bootswatch.com/4/cerulean/bootstrap.min.css">
 	<link rel="stylesheet" href="audiovis.css">
-	<!--Handlebars and JQuery needed for the Spotify Auth Code. It isn't used anywhere else-->
+
+	<!--JQuery needed for Bootstrap and the Spotify Auth Code. It isn't used anywhere else-->
 	<script src="//cdnjs.cloudflare.com/ajax/libs/handlebars.js/2.0.0-alpha.1/handlebars.min.js"></script>
+	<!--Handlebars needed for the Spotify Auth Code.-->
 	<script src="https://code.jquery.com/jquery-1.10.1.min.js"></script>
-	<script src="audiovis.js"></script>
+	<!--Popper JS needed for bootstrap-->
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+	<!--Import Bootstrap-->
+	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
 </head>
 <body>
-	<div id="guiBox">
-		<div id="controls">
+	<nav class="bg-primary">
+		<div class="topnav-item">
+			<h1 id="app-title">Audio Vis</h1>
+		</div>
 
-			<audio controls loop></audio>
+		<div class="topnav-item">
+			<h2>Tracklist <i class="far fa-caret-square-down fa-1x" id="tracklist-button"></i></h2>
+		</div>
 
-			<div id="tracklist-container">
-				<label>Track List:
-					<select id="trackSelect" >
-						<option value="media/New Adventure Theme.mp3" class="default-song first-song" id="defaultOption">New Adventure Theme</option>
-						<option value="media/Peanuts Theme.mp3" class="default-song">Peanuts Theme</option>
-						<option value="media/The Picard Song.mp3" class="default-song">The Picard Song</option>
-					</select>
-				</label>
-			</div>
+		<div class="topnav-item">
+			<h2>Effects <i class="far fa-caret-square-down fa-1x" id="effects-button"></i></h2>
+		</div>
 
-			<span>Search Spotify for Songs: </span>
-			<div id="sp-search-bar">
-				<div id="sp-search-section">
-					<input type='text' id="sp-search-field"/>
-				</div>
-				<div id="sp-search-button"><i class="fas fa-search"></i></div>
-			</div>
+		<div class="topnav-search">
+			<!--Appears when NOT Signed Into Spotify-->
+			<a href="/login" class="logged-out" id="sp-login-button"><h2 id="sp-signin">Sign In with Spotify <i class="fab fa-spotify"></i></h2></a>
 
-			<a href="/login" id="sp-login-button"><i class="fab fa-spotify fa-2x"></i></a>
-			<button id="fsButton">Go Full Screen</button><br>
+			<!--Appears when Signed Into Spotify-->
+			<h2 class="logged-in">Search</h2>
+			<input class="logged-in" id="sp-search-field" type="text" placeholder="Enter a Song or Artist">
+		</div>
+	</nav>
 
-			<div id="settings">
-				<span>Overlay Effects</span>
+	<!--Tracklist Dropdown-->
+	<div id="tracklist-dropdown" class="bg-primary av-dropdown">
+		<select id="trackSelect" >
+			<option value="media/New Adventure Theme.mp3" class="default-song first-song" id="defaultOption">New Adventure Theme</option>
+			<option value="media/Peanuts Theme.mp3" class="default-song">Peanuts Theme</option>
+			<option value="media/The Picard Song.mp3" class="default-song">The Picard Song</option>
+		</select>
+	</div>
+
+	<!--Effects Dropdown-->
+	<!--Heavily influenced from the example listed
+	 on Bootstrap's documentation for tabs found here:
+	 https://getbootstrap.com/docs/4.0/components/navs/#javascript-behavior
+	-->
+	<div id="effects-dropdown" class="bg-primary av-dropdown">
+		<ul class="nav nav-tabs" id="visual-control-tabs" role="tablist">
+  		<li class="nav-item">
+    		<a class="nav-link active" id="effects-tab" data-toggle="tab" href="#effects" role="tab" aria-controls="Effects" aria-selected="true">Effects</a>
+  		</li>
+  		<li class="nav-item">
+    		<a class="nav-link" id="themes-tab" data-toggle="tab" href="#themes" role="tab" aria-controls="Themes" aria-selected="false">Themes</a>
+  		</li>
+  		<li class="nav-item">
+    		<a class="nav-link" id="filters-tab" data-toggle="tab" href="#filters" role="tab" aria-controls="Filters" aria-selected="false">Filters</a>
+  		</li>
+		</ul>
+		<div class="tab-content" id="visual-controls">
+			<!--Effect Controls-->
+  		<div class="tab-pane fade show active" id="effects" role="tabpanel" aria-labelledby="effects-tab">
 				<div>
 					<span>
 						<label for="cosmicChickenBox">Cosmic Chicken</label>
@@ -63,15 +95,47 @@
 					</span>
 				</div>
 			</div>
-
-			<p id="status">???</p>
+			<!--Theme Controls-->
+  		<div class="tab-pane fade" id="themes" role="tabpanel" aria-labelledby="themes-tab">
+				2
+			</div>
+			<!--Filter Controls-->
+			<div class="tab-pane fade" id="filters" role="tabpanel" aria-labelledby="filters-tab">
+				last
+			</div>
 		</div>
 	</div>
+
+	<!--Search Results Dropdown-->
+	<div id="sp-results-box" class="bg-primary av-dropdown">
+		<div id="sp-searches">
+			<span id="sp-append-span"></span>
+		</div>
+	</div>
+
+	<!--Audio Player-->
+	<div id="audio-player" class="bg-primary">
+		<audio controls loop></audio>
+	</div>
+
+	<!--Name, Now Playing, and GitHub-->
+	<div id="bottom-section">
+		<span id="madeby" class="bottom-section-third">Made by James DiGrazia</span>
+
+		<div id="np-scroll-box" class="bottom-section-third">
+			<span id="status">Now Playing: Song Name By........</span>
+		</div>
+
+		<span id="view-code" class="bottom-section-third">View the code on <a href="https://github.com/JimDaGuy/audio-vis">GitHub <i class="fab fa-github"></i></a></span>
+	</div>
+	
 	<video id="video" autoplay loop muted/>
 		<source src="media/chicken.mp4" type="video/mp4">
 	</video>
 	<canvas id="canvas" width="640" height="400"></canvas>
 
 
+
 </body>
+<script src="audiovis.js"></script>
 </html>

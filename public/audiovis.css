@@ -3,8 +3,199 @@
         width:  100%;
         height: 100%;
         margin: 0px;
-        background: #000000;
+        background-image: url("resources/rainy.jpeg");
+        background-size:     cover;
+        background-repeat:   no-repeat;
+        background-position: center center;
+        background-color: indigo;
+        color: black;
         font-family: tahoma, verdana, sans serif;
+        z-index: 10;
+      }
+
+
+      nav {
+        border-radius: 10px;
+        width: 90%;
+        top: 25px;
+        left: 5%;
+        height: 50px;
+        display: flex;
+        align-items: center;
+        position: fixed;
+        z-index: 15;
+      }
+
+      .topnav-item {
+        float: left;
+        width: 15vw;
+        margin-left: 15px;
+      }
+
+      .fa-caret-square-down:hover {
+        color: gray;
+      }
+
+      .topnav-search {
+        float: right;
+        width: calc(45vw - 60px);
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+      }
+
+      .topnav-search input {
+        float: left;
+      }
+
+
+
+      h1 {
+        font-size: 25px;
+        vertical-align: middle;
+        margin: 0;
+      }
+
+      #app-title {
+        font-family: "Shrikhand", Arial;
+        color: #FF69B4;
+        text-shadow: 2px 2px pink;
+      }
+
+      h2 {
+        font-size: 22px;
+        vertical-align: middle;
+        margin: 0;
+        float: left;
+      }
+
+      i {
+        float: right;
+      }
+
+      #sp-signin {
+        color: green;
+      }
+
+      .logged-in, .logged-out {
+        display: none;
+      }
+
+      input {
+        margin-left: 15px;
+        float: left;
+      }
+
+      .av-dropdown {
+        height: 20vh;
+        position: fixed;
+        top: 85px;
+        z-index: 15;
+        opacity: .8;
+        border-radius: 5px;
+      }
+
+      #tracklist-dropdown {
+        left: calc(10vw + 30px);
+        width: 20%;
+        overflow-y: scroll;
+        display: none;
+      }
+
+      #trackSelect {
+        width: 100%;
+      }
+
+      #effects-dropdown {
+        left: 40%;
+        width: 30%;
+        display: none;
+      }
+
+      #visual-control-tabs {
+        width: calc(100% - 20px);
+        margin-left: 10px;
+        margin-top: 10px;
+      }
+
+      .nav-item {
+        background-color: #1E6075;
+        width: 33.33%;
+        height: 45px;
+      }
+
+      .nav-item.active {
+        color: #DCDEAC !important;
+      }
+
+      /*I know you shouldn't use !important, but I didn't
+      see anything about it in the project rubric, I'm low on time,
+      and bootstrap keeps over-riding my css rules*/
+      .nav-link.active {
+        background-color: #2DA89C !important;
+        border-color: #2DEBAE !important;
+        color: #DCDEAC !important;
+      }
+
+      .tab-pane {
+        width: calc(100% - 20px);
+        margin-left: 10px;
+        padding-top: 10px;
+        background-color: #2DA89C;
+      }
+
+      #sp-results-box {
+        left: calc(75vw - 15px);
+        width: 20%;
+        display: none;
+      }
+
+      #sp-searches {
+        width: 90%;
+        margin-left: 5%;
+        margin-top: 10px;
+      }
+
+      #audio-player {
+        width: 50%;
+        border-radius: 10px;
+        position: fixed;
+        left: 25%;
+        top: 80%;
+        height: 50px;
+        display: flex;
+        align-items: center;
+      }
+
+      audio {
+        width: 90%;
+        margin: auto 5%;
+      }
+
+      #bottom-section {
+        width: 100%;
+        position: fixed;
+        top: 95%;
+        height: 5%;
+        color: white;
+      }
+
+      .bottom-section-third {
+        width: 30%;
+        text-align: center;
+      }
+
+      #madeby {
+        float: left;
+      }
+
+      #np-scroll-box {
+        float: left;
+        margin-left: 5%;
+      }
+
+      #view-code {
+        float: right;
       }
 
       #guiBox {
@@ -14,10 +205,7 @@
         z-index: 5;
       }
 
-      audio {
-        width: 90%;
-        margin: 0 auto;
-      }
+
 
       #controls{
         margin-left:10px;
@@ -29,35 +217,15 @@
         margin-bottom: 5px;
       }
 
-      #sp-search-bar {
-        width: 100%;
-        height: 25px;
-        margin-top: 5px;
-      }
-
-      #sp-search-section {
-        width: 60%;
-        float: left;
-      }
-
       #sp-search-field {
-        width: 100%;
+        width: 250px;
       }
 
       .search-item {
-        width: 80%;
+        width: 100%;
         text-overflow: ellipsis;
         background-color: orange;
         border: 3px solid purple;
-      }
-
-      #sp-search-button {
-        float: left;
-        margin-left: 15px;
-      }
-
-      #sp-login-button {
-        color: green;
       }
 
       #settings {
