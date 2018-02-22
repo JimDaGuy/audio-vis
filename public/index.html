@@ -55,11 +55,13 @@
 
 	<!--Tracklist Dropdown-->
 	<div id="tracklist-dropdown" class="bg-primary av-dropdown">
-		<select id="trackSelect" >
-			<option value="media/New Adventure Theme.mp3" class="default-song first-song" id="defaultOption">New Adventure Theme</option>
-			<option value="media/Peanuts Theme.mp3" class="default-song">Peanuts Theme</option>
-			<option value="media/The Picard Song.mp3" class="default-song">The Picard Song</option>
-		</select>
+		<div id="tracklist-container">
+			<select id="trackSelect" >
+				<option value="media/New Adventure Theme.mp3" class="default-song first-song" id="defaultOption">New Adventure Theme</option>
+				<option value="media/Peanuts Theme.mp3" class="default-song">Peanuts Theme</option>
+				<option value="media/The Picard Song.mp3" class="default-song">The Picard Song</option>
+			</select>
+		</div>
 	</div>
 
 	<!--Effects Dropdown-->
@@ -75,24 +77,26 @@
   		<li class="nav-item">
     		<a class="nav-link" id="themes-tab" data-toggle="tab" href="#themes" role="tab" aria-controls="Themes" aria-selected="false">Themes</a>
   		</li>
-  		<li class="nav-item">
+			<li class="nav-item">
     		<a class="nav-link" id="filters-tab" data-toggle="tab" href="#filters" role="tab" aria-controls="Filters" aria-selected="false">Filters</a>
+  		</li>
+			<li class="nav-item">
+    		<a class="nav-link" id="intensive-tab" data-toggle="tab" href="#intensive" role="tab" aria-controls="Intensive" aria-selected="false">Intensive</a>
   		</li>
 		</ul>
 		<div class="tab-content" id="visual-controls">
 			<!--Effect Controls-->
   		<div class="tab-pane fade show active" id="effects" role="tabpanel" aria-labelledby="effects-tab">
 				<div>
-					<span>
-						<label for="cosmicChickenBox">Cosmic Chicken</label>
-						<input type="checkbox" id="cosmicChickenBox">
-					</span>
-				</div>
-				<div>
-					<span>
-						<label for="curvesBox">Curves</label>
+					<span class="effect-item">
+						<label for="curvesBox">Quadratic Curves</label>
 						<input type="checkbox" id="curvesBox">
 					</span>
+					<span class="effect-item">
+						<label for="glowboxesBox">Glow Boxes</label>
+						<input type="checkbox" id="glowboxesBox">
+					</span>
+
 				</div>
 			</div>
 			<!--Theme Controls-->
@@ -101,7 +105,21 @@
 			</div>
 			<!--Filter Controls-->
 			<div class="tab-pane fade" id="filters" role="tabpanel" aria-labelledby="filters-tab">
-				last
+				<div id="threshold-row">
+					<label for="thresholdBox">Threshold</label>
+					<input type="checkbox" id="thresholdBox">
+					<input id="thSlider" type ="range" min ="0" max="255" step ="5" value ="0"/>
+					<span id="thSliderResults">---</span>
+				</div>
+			</div>
+			<!--Intensive Controls-->
+			<div class="tab-pane fade" id="intensive" role="tabpanel" aria-labelledby="intensive-tab">
+				<div>
+					<span class="effect-item">
+						<label for="cosmicChickenBox">Cosmic Chicken</label>
+						<input type="checkbox" id="cosmicChickenBox">
+					</span>
+				</div>
 			</div>
 		</div>
 	</div>
@@ -128,7 +146,7 @@
 
 		<span id="view-code" class="bottom-section-third">View the code on <a href="https://github.com/JimDaGuy/audio-vis">GitHub <i class="fab fa-github"></i></a></span>
 	</div>
-	
+
 	<video id="video" autoplay loop muted/>
 		<source src="media/chicken.mp4" type="video/mp4">
 	</video>

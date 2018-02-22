@@ -8,13 +8,16 @@
     var NUM_SAMPLES = 256, audioElement, analyserNode,
     SOUND_1 = 'media/New Adventure Theme.mp3', SOUND_2 = 'media/Peanuts Theme.mp3',
     SOUND_3 = 'media/The Picard Song.mp3';
-    var addedSongs = [];
+
     //Canvas variables
     var canvas, ctx;
     //Effect varibles
-    var cosmicChicken = false, curves = false;
+    var cosmicChicken = false, curves = false, glowBoxes = false;
+    //Filter Variables
+    var threshold = false, threshVal = 0;
 
     var defaultSongs;
+    var addedSongs = [];
 
     //Spotify Element Variables
     var spSearchButton, spSearchField, spResultsBox, spSearches, spAppendSpan;
@@ -48,6 +51,9 @@
       analyserNode = createWebAudioContextWithAnalyserNode(audioElement);
       setupUI();
 
+      //Init Graphics settings
+      document.getElementById('glowboxesBox').checked = glowBoxes = true;
+
       //Add song name variables to the default songs
       defaultSongs = document.getElementsByClassName("default-song");
       defaultSongs[0].displayName = "New Adventure Theme";
@@ -66,6 +72,8 @@
       spResultsBox = document.getElementById('sp-results-box');
       spSearches = document.getElementById('sp-searches');
       spAppendSpan = document.getElementById('sp-append-span');
+
+      window.onresize = resize;
 
       update();
     }
@@ -88,25 +96,56 @@
     if(cosmicChicken)
       drawVideo();
 
+    if(glowBoxes)
+    {
+        ctx.save();
+
+        ctx.lineWidth = 5;
+        ctx.strokeStyle = "#DDA0DD";
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = "#EE82EE";
+
+        //Draw glow boxes base line
+        ctx.beginPath();
+        ctx.moveTo(0, canvas.offsetHeight / 2);
+        ctx.lineTo(canvas.offsetWidth, canvas.offsetHeight / 2);
+        ctx.closePath();
+        ctx.stroke();
+
+        ctx.restore();
+    }
+
     //Called for each 0-255 value passed in
     for(var i = 0; i < data.length; i++) {
       ctx.fillStyle = 'rgba(0,255,0,0.6)';
 
-      ctx.fillRect(i * (barWidth + barSpacing),topSpacing + 256-data[i],barWidth,barHeight);
-      ctx.fillRect(canvas.offsetWidth - i * (barWidth + barSpacing), topSpacing + 256 - data[i] - 20, barWidth, barHeight);
+      //ctx.fillRect(i * (barWidth + barSpacing),topSpacing + 256-data[i],barWidth,barHeight);
+      //ctx.fillRect(canvas.offsetWidth - i * (barWidth + barSpacing), topSpacing + 256 - data[i] - 20, barWidth, barHeight);
 
       if(curves && i <= (data.length - 30)) {
         //Custom Drawing Code
         drawCurves(data[i], (data.length - 30), i, 250, "white", 0);
         drawCurves(data[i], (data.length - 30), i, 200, "purple", 0);
       }
+
+      if(glowBoxes)
+        drawGlowBoxes(data[i], data.length, i);
+
     }
+
+    applyFilters();
 
     // this schedules a call to the update() method in 1/60 seconds
     requestAnimationFrame(update);
   }
 
     //HELPER FUNCTIONS
+
+    //Called whenever the window is resized
+    function resize() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
 
   function createWebAudioContextWithAnalyserNode(audioElement) {
     var audioCtx, analyserNode, sourceNode;
@@ -134,13 +173,16 @@
 
     //Navbar Dropdowns
     document.querySelector("#tracklist-button").onclick = tlDropdown;
-
     document.querySelector("#effects-button").onclick = efDropdown;
 
+
     document.querySelector("#trackSelect").onchange = function(e){
-      //console.dir(e.options[e.selectedIndex].text);
-      //console.dir(e.target[e.target.selectedIndex]);
       playStream(audioElement, e.target);
+    };
+
+    document.querySelector("#thSlider").onchange = function(e){
+      document.querySelector("#thSliderResults").innerHTML = e.target.value;
+      threshVal = e.target.value;
     };
 
     /*
@@ -160,6 +202,16 @@
     document.getElementById('curvesBox').onchange = function(e){
       curves = e.target.checked;
     };
+
+    //Glow Glow Boxes
+    document.getElementById('glowboxesBox').onchange = function(e){
+      glowBoxes = e.target.checked;
+    };
+
+    //Threshold
+		document.getElementById('thresholdBox').onchange = function(e){
+			threshold = e.target.checked;
+		};
 
   }
 
@@ -218,11 +270,13 @@ https://stackoverflow.com/questions/19669786/check-if-element-is-visible-in-dom
 
   function efDropdown() {
     var efDropdown = document.getElementById("effects-dropdown");
+    efDropdown.style.height = 60 + (.1 * window.innerHeight) + "px";
     if(isHidden(efDropdown)){
       efDropdown.style.display = "initial";
     }
-    else
+    else {
       efDropdown.style.display = "none";
+    }
   }
 
   //DRAWING HELPER FUNCTIONS
@@ -295,6 +349,38 @@ https://stackoverflow.com/questions/19669786/check-if-element-is-visible-in-dom
     ctx.restore();
   }
 
+  function drawGlowBoxes( currData, dataLength, dataIndex) {
+    var boxMaxHeightPercent = 40;
+
+    var boxHeightPx = canvas.height * (boxMaxHeightPercent / 100);
+
+    var boxWidth = canvas.width / dataLength;
+    var boxHeight = (currData / 256) * boxHeightPx;
+
+    var currBoxX = boxWidth * dataIndex;
+    var currBoxY = (canvas.height / 2) - boxHeight;
+
+    ctx.save();
+
+    ctx.globalAlpha = .7;
+
+    var glowGradient = ctx.createLinearGradient(0, canvas.height / 2, canvas.width, canvas.height / 2);
+    glowGradient.addColorStop(0,"#BA55D3");
+    glowGradient.addColorStop(1,"red");
+
+    ctx.fillStyle = glowGradient;
+
+    ctx.fillRect(currBoxX, currBoxY, boxWidth, boxHeight);
+
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = "#DDA0DD";
+    ctx.shadowBlur = 10;
+    ctx.shadowColor = "blue";
+    ctx.strokeRect(currBoxX, currBoxY, boxWidth, boxHeight);
+
+    ctx.restore();
+  }
+
   //VIDEO ELEMENT HELPER FUNCTIONS
 
   function drawVideo() {
@@ -323,6 +409,60 @@ https://stackoverflow.com/questions/19669786/check-if-element-is-visible-in-dom
     }
 
     ctx.putImageData(imageData, 0, 0);
+  }
+
+  function applyFilters() {
+    var imageData = ctx.getImageData( 0, 0, canvas.width, canvas.height);
+    var data = imageData.data;
+    var length = data.length;
+    var width = imageData.width;
+
+    for (var i = 0; i < length; i += 4) {
+      /*
+				 if (tintRed) {
+				 	// just the red channel this time
+				 	data[i] = data[i] + 100;
+				 }
+
+				 if(invert) {
+				 	var red = data[i], green = data[i+1], blue = data[i+2];
+				 	data[i] = 255 - red; //set red value
+				 	data[i+1] = 255 - green; //set blue value
+				 	data[i+2] = 255 - blue; //set green value
+				 	//data[i+3] is the alpha but we’re leaving that alone
+				 }
+
+				 //vi) noise
+				 if ( noise && Math.random () < .10 ) {
+				 	data[i] = data[i+1] = data[i+2] = 128; // graynoise
+				 	// data[i] = data[i+1] = data[i+2] = 255; // or whitenoise
+				 	// data[i] = data[i+1] = data[i+2] = 0; // or blacknoise
+				 	// data[i+3] = 255; //alpha
+				 }
+
+				 //vii) draw 2-pixel lines every 50 rows
+				 if (lines) {
+				 	var row = Math.floor(i/4/width);
+				 	if (row % 50 == 0) {
+				 		// this row
+				 		data[i] = data[i+1] = data[i+2] = data[i+3] = 255;
+				 		// next row
+				 		data[ i + (width * 4)] = data[ i + ( width * 4) + 1] = data[ i + ( width * 4) + 2] = data [ i + ( width * 4) + 3] = 255;
+				 	}
+				 }
+				 */
+				 if (threshold) {
+				 	var red = data[i], green = data[i+1], blue = data[i+2];
+
+				 	if(0.2126 * red + 0.7152 * green + 0.0722 * blue >= threshVal)
+				 		data[i] = data[i+1] = data[i+2] = 255;
+				 	else
+				 		data[i] = data[i+1] = data[i+2] = 0;
+				 }
+
+			}
+			// put the modified data back on the canvas
+			ctx.putImageData( imageData, 0, 0);
   }
 
   //SPOTIFY API CODE

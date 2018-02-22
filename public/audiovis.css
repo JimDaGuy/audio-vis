@@ -13,7 +13,6 @@
         z-index: 10;
       }
 
-
       nav {
         border-radius: 10px;
         width: 90%;
@@ -48,8 +47,6 @@
         float: left;
       }
 
-
-
       h1 {
         font-size: 25px;
         vertical-align: middle;
@@ -81,11 +78,6 @@
         display: none;
       }
 
-      input {
-        margin-left: 15px;
-        float: left;
-      }
-
       .av-dropdown {
         height: 20vh;
         position: fixed;
@@ -98,12 +90,17 @@
       #tracklist-dropdown {
         left: calc(10vw + 30px);
         width: 20%;
-        overflow-y: scroll;
         display: none;
       }
 
-      #trackSelect {
-        width: 100%;
+      #tracklist-container {
+        width: 90%;
+        margin-left: 5%;
+        margin-top: 10px;
+      }
+
+      #trackSelect option {
+        background-color: #574BE8;
       }
 
       #effects-dropdown {
@@ -124,7 +121,7 @@
 
       .nav-item {
         background-color: #1E6075;
-        width: 33.33%;
+        width: 25%;
         height: 45px;
       }
 
@@ -147,6 +144,24 @@
         padding-top: 10px;
         background-color: #2DA89C;
         height: 10vh;
+      }
+
+      .effect-item {
+        margin-left: 15px;
+      }
+
+      #threshold-row {
+        width: 100%;
+        display: flex;
+        align-items: center;
+      }
+
+      #threshold-row label, #threshold-row input {
+        margin: 0 15px;
+      }
+
+      #thSliderResults {
+        background-color: lightblue;
       }
 
       #sp-results-box {
@@ -217,12 +232,9 @@
         margin-top:10px;
       }
 
-      #tracklist-container {
-        width: 100%;
-        margin-bottom: 5px;
-      }
-
       #sp-search-field {
+        margin-left: 15px;
+        float: left;
         width: 250px;
       }
 
