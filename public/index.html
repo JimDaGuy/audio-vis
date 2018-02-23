@@ -96,7 +96,15 @@
 						<label for="glowboxesBox">Glow Boxes</label>
 						<input type="checkbox" id="glowboxesBox">
 					</span>
-
+					<div id="tricirc-item">
+						<span class="effect-item">
+							<label for="tricircBox">TriCirc</label>
+							<input type="checkbox" id="tricircBox">
+							<label for="tcSlider">TC MaxWave Height</label>
+							<input id="tcSlider" type ="range" min ="0" max="250" step ="5" value ="20"/>
+							<span id="tcSliderResults">---</span>
+						</span>
+					</div>
 				</div>
 			</div>
 			<!--Theme Controls-->
@@ -108,7 +116,7 @@
 				<div id="threshold-row">
 					<label for="thresholdBox">Threshold</label>
 					<input type="checkbox" id="thresholdBox">
-					<input id="thSlider" type ="range" min ="0" max="255" step ="5" value ="0"/>
+					<input id="thSlider" type ="range" min ="0" max="100" step ="5" value ="0"/>
 					<span id="thSliderResults">---</span>
 				</div>
 			</div>

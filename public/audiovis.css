@@ -100,6 +100,7 @@
       }
 
       #trackSelect option {
+        width: 100% !important;
         background-color: #574BE8;
       }
 
@@ -148,6 +149,23 @@
 
       .effect-item {
         margin-left: 15px;
+      }
+
+      #tricirc-item {
+        width: 100%;
+      }
+
+      #tricirc-item span {
+        display: flex;
+        align-items: center;
+      }
+
+      #tricirc-item label, #tricirc-item input {
+        margin: 0 15px;
+      }
+
+      #tcSliderResults {
+        background-color: lightblue;
       }
 
       #threshold-row {

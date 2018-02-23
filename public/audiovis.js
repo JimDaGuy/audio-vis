@@ -12,9 +12,12 @@
     //Canvas variables
     var canvas, ctx;
     //Effect varibles
-    var cosmicChicken = false, curves = false, glowBoxes = false;
+    var cosmicChicken = false, curves = false, glowBoxes = false, triCirc = false;
+
+    var triCircRadius, triCircRadiusPerc;
+
     //Filter Variables
-    var threshold = false, threshVal = 0;
+    var threshold = false, tcWaveHeight = 50, threshVal = 0;
 
     var defaultSongs;
     var addedSongs = [];
@@ -32,6 +35,10 @@
 
       ctx.canvas.width  = window.innerWidth;
       ctx.canvas.height = window.innerHeight;
+
+      //Tri circ radius elements
+      triCircRadiusPerc = 30;
+      triCircRadius = canvas.height * (triCircRadiusPerc / 100);
 
       videoElement = document.querySelector('video');
 
@@ -53,6 +60,7 @@
 
       //Init Graphics settings
       document.getElementById('glowboxesBox').checked = glowBoxes = true;
+      document.getElementById('tricircBox').checked = triCirc = true;
 
       //Add song name variables to the default songs
       defaultSongs = document.getElementsByClassName("default-song");
@@ -81,7 +89,12 @@
   function update() {
     // create a new array of 8-bit integers (0-255)
     var data = new Uint8Array(NUM_SAMPLES/2);
+    var data2 = new Uint8Array(NUM_SAMPLES/2);
+
+    //Data 1 is frequency data
     analyserNode.getByteFrequencyData(data);
+    //Data 2 is waveform data
+    analyserNode.getByteTimeDomainData(data2);
 
     //Clear previous frame
     ctx.clearRect(0,0, canvas.offsetWidth, canvas.offsetHeight);
@@ -115,6 +128,23 @@
         ctx.restore();
     }
 
+    if(triCirc) {
+      ctx.save();
+
+      ctx.lineWidth = 1;
+      ctx.strokeStyle = "white";
+      ctx.shadowBlur = 5;
+      ctx.shadowColor = "#FF832B";
+
+      //Draw base Circle
+      ctx.beginPath();
+      ctx.arc(canvas.width / 2, canvas.height / 2, triCircRadius, 0, 2 * Math.PI, false);
+      ctx.closePath();
+      ctx.stroke();
+
+      ctx.restore();
+    }
+
     //Called for each 0-255 value passed in
     for(var i = 0; i < data.length; i++) {
       ctx.fillStyle = 'rgba(0,255,0,0.6)';
@@ -131,6 +161,8 @@
       if(glowBoxes)
         drawGlowBoxes(data[i], data.length, i);
 
+      if(triCirc && (i % 2 == 0))
+        drawTriCirc(data2[i], data.length / 2, i / 2);
     }
 
     applyFilters();
@@ -180,6 +212,11 @@
       playStream(audioElement, e.target);
     };
 
+    document.querySelector("#tcSlider").onchange = function(e){
+      document.querySelector("#tcSliderResults").innerHTML = e.target.value;
+      tcWaveHeight = e.target.value;
+    };
+
     document.querySelector("#thSlider").onchange = function(e){
       document.querySelector("#thSliderResults").innerHTML = e.target.value;
       threshVal = e.target.value;
@@ -203,9 +240,14 @@
       curves = e.target.checked;
     };
 
-    //Glow Glow Boxes
+    //Glow Boxes
     document.getElementById('glowboxesBox').onchange = function(e){
       glowBoxes = e.target.checked;
+    };
+
+    //Triangles Circle
+    document.getElementById('tricircBox').onchange = function(e){
+      triCirc = e.target.checked;
     };
 
     //Threshold
@@ -288,31 +330,21 @@ https://stackoverflow.com/questions/19669786/check-if-element-is-visible-in-dom
     var radiusCoeff = currData / 256;
     var dcMaxRadius = radiusCoeff * radius;
     var radiansPerInterval = (2 * Math.PI) / dataLength;
-  var radianOffset = degreeOffset / 180 * Math.PI;
+    var radianOffset = degreeOffset / 180 * Math.PI;
 
+    //Create variables for the radial value of three different angles
+    if(dataIndex == 0)
+      var prevRad = ((2 * Math.PI) - radiansPerInterval) - (1/16 * Math.PI) + radianOffset;
+    else
+      var prevRad = (radiansPerInterval * (dataIndex - 1)) - (1/16 * Math.PI) + radianOffset;
 
-  //Change the color if the song hits highs or the color has stayed the same for too long
-  /*
-  if(currData == 250 || colorCounter >= colorTime) {
-    bigStrokeColor = getRandomColor();
-    smallStrokeColor = getRandomColor();
-    colorCounter = 0;
-  }
-  */
+    var currRad = (radiansPerInterval * dataIndex) + radianOffset;
 
-  //Create variables for the radial value of three different angles
-  if(dataIndex == 0)
-    var prevRad = ((2 * Math.PI) - radiansPerInterval) - (1/16 * Math.PI) + radianOffset;
-  else
-    var prevRad = (radiansPerInterval * (dataIndex - 1)) - (1/16 * Math.PI) + radianOffset;
-
-  var currRad = (radiansPerInterval * dataIndex) + radianOffset;
-
-  //Set point for further out radian
-  if(dataIndex == (dataLength - 1))
-    var futureRad = 0 + (1/16 * Math.PI) + radianOffset;
-  else
-    var futureRad = (radiansPerInterval * (dataIndex + 1)) + (1/16 * Math.PI)  + radianOffset;
+    //Set point for further out radian
+    if(dataIndex == (dataLength - 1))
+      var futureRad = 0 + (1/16 * Math.PI) + radianOffset;
+    else
+      var futureRad = (radiansPerInterval * (dataIndex + 1)) + (1/16 * Math.PI)  + radianOffset;
 
     //Find points we need
     var firstCircRadius = 1/4 * dcMaxRadius;
@@ -381,6 +413,50 @@ https://stackoverflow.com/questions/19669786/check-if-element-is-visible-in-dom
     ctx.restore();
   }
 
+  function drawTriCirc(currData, dataLength, dataIndex) {
+    ctx.save();
+
+    var radPerAngle = 2 * Math.PI / dataLength;
+    var currRad = radPerAngle * dataIndex;
+    var midRad = radPerAngle * (dataIndex + .5);
+    var nextRad;
+    if(dataIndex == (dataLength - 1))
+      nextRad = 0;
+    else
+      nextRad = radPerAngle * (dataIndex + 1);
+
+    var radiusOffset = tcWaveHeight * ((currData - 125) / 15);
+    var triRadius = triCircRadius + radiusOffset;
+
+    var originX = canvas.width / 2;
+    var originY = canvas.height / 2;
+
+    var triPointX = originX + (triRadius * Math.cos((2 * Math.PI) - midRad));
+    var triPointY = originY - (triRadius * Math.sin((2 * Math.PI) - midRad));
+
+    var currRadX = originX + (triCircRadius * Math.cos(currRad));
+    var currRadY = originY + (triCircRadius * Math.sin(currRad));
+
+    var nextRadX = originX + (triCircRadius * Math.cos(nextRad));
+    var nextRadY = originY + (triCircRadius * Math.sin(nextRad));
+
+    ctx.globalAlpha = .6;
+    ctx.lineWidth = 2;
+    ctx.fillStyle = "#2C237F";
+    ctx.strokeStyle = "#2C237F";
+    ctx.shadowColor = "#61C5FF";
+    ctx.shadowBlur = 10;
+
+    ctx.beginPath();
+    ctx.moveTo(currRadX, currRadY);
+    ctx.quadraticCurveTo(triPointX, triPointY, nextRadX, nextRadY);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.restore();
+  }
+
   //VIDEO ELEMENT HELPER FUNCTIONS
 
   function drawVideo() {
@@ -412,57 +488,60 @@ https://stackoverflow.com/questions/19669786/check-if-element-is-visible-in-dom
   }
 
   function applyFilters() {
-    var imageData = ctx.getImageData( 0, 0, canvas.width, canvas.height);
-    var data = imageData.data;
-    var length = data.length;
-    var width = imageData.width;
+    if(threshold) {
+      var imageData = ctx.getImageData( 0, 0, canvas.width, canvas.height);
+      var data = imageData.data;
+      var length = data.length;
+      var width = imageData.width;
 
-    for (var i = 0; i < length; i += 4) {
-      /*
-				 if (tintRed) {
-				 	// just the red channel this time
-				 	data[i] = data[i] + 100;
-				 }
+      for (var i = 0; i < length; i += 4) {
+        /*
+  				 if (tintRed) {
+  				 	// just the red channel this time
+  				 	data[i] = data[i] + 100;
+  				 }
 
-				 if(invert) {
-				 	var red = data[i], green = data[i+1], blue = data[i+2];
-				 	data[i] = 255 - red; //set red value
-				 	data[i+1] = 255 - green; //set blue value
-				 	data[i+2] = 255 - blue; //set green value
-				 	//data[i+3] is the alpha but we’re leaving that alone
-				 }
+  				 if(invert) {
+  				 	var red = data[i], green = data[i+1], blue = data[i+2];
+  				 	data[i] = 255 - red; //set red value
+  				 	data[i+1] = 255 - green; //set blue value
+  				 	data[i+2] = 255 - blue; //set green value
+  				 	//data[i+3] is the alpha but we’re leaving that alone
+  				 }
 
-				 //vi) noise
-				 if ( noise && Math.random () < .10 ) {
-				 	data[i] = data[i+1] = data[i+2] = 128; // graynoise
-				 	// data[i] = data[i+1] = data[i+2] = 255; // or whitenoise
-				 	// data[i] = data[i+1] = data[i+2] = 0; // or blacknoise
-				 	// data[i+3] = 255; //alpha
-				 }
+  				 //vi) noise
+  				 if ( noise && Math.random () < .10 ) {
+  				 	data[i] = data[i+1] = data[i+2] = 128; // graynoise
+  				 	// data[i] = data[i+1] = data[i+2] = 255; // or whitenoise
+  				 	// data[i] = data[i+1] = data[i+2] = 0; // or blacknoise
+  				 	// data[i+3] = 255; //alpha
+  				 }
 
-				 //vii) draw 2-pixel lines every 50 rows
-				 if (lines) {
-				 	var row = Math.floor(i/4/width);
-				 	if (row % 50 == 0) {
-				 		// this row
-				 		data[i] = data[i+1] = data[i+2] = data[i+3] = 255;
-				 		// next row
-				 		data[ i + (width * 4)] = data[ i + ( width * 4) + 1] = data[ i + ( width * 4) + 2] = data [ i + ( width * 4) + 3] = 255;
-				 	}
-				 }
-				 */
-				 if (threshold) {
-				 	var red = data[i], green = data[i+1], blue = data[i+2];
+  				 //vii) draw 2-pixel lines every 50 rows
+  				 if (lines) {
+  				 	var row = Math.floor(i/4/width);
+  				 	if (row % 50 == 0) {
+  				 		// this row
+  				 		data[i] = data[i+1] = data[i+2] = data[i+3] = 255;
+  				 		// next row
+  				 		data[ i + (width * 4)] = data[ i + ( width * 4) + 1] = data[ i + ( width * 4) + 2] = data [ i + ( width * 4) + 3] = 255;
+  				 	}
+  				 }
+  				 */
+  				 if (threshold) {
+  				 	var red = data[i], green = data[i+1], blue = data[i+2];
 
-				 	if(0.2126 * red + 0.7152 * green + 0.0722 * blue >= threshVal)
-				 		data[i] = data[i+1] = data[i+2] = 255;
-				 	else
-				 		data[i] = data[i+1] = data[i+2] = 0;
-				 }
+  				 	if(0.2126 * red + 0.7152 * green + 0.0722 * blue >= threshVal)
+  				 		data[i] = data[i+1] = data[i+2] = 255;
+  				 	else
+  				 		data[i] = data[i+1] = data[i+2] = 0;
+  				 }
 
-			}
-			// put the modified data back on the canvas
-			ctx.putImageData( imageData, 0, 0);
+  			}
+  			// put the modified data back on the canvas
+  			ctx.putImageData( imageData, 0, 0);
+    }
+
   }
 
   //SPOTIFY API CODE
