@@ -628,7 +628,7 @@ https://stackoverflow.com/questions/19669786/check-if-element-is-visible-in-dom
     alert('There was an error during the authentication');
   } else {
     if(access_token) {
-      console.log("User should be logged in now");
+      //console.log("User should be logged in now");
       var loggedOutElements = document.getElementsByClassName("logged-out");
       loggedOutElements[0].style.display = "none";
       var loggedInElements = document.getElementsByClassName("logged-in");
@@ -636,7 +636,7 @@ https://stackoverflow.com/questions/19669786/check-if-element-is-visible-in-dom
       loggedInElements[1].style.display = "initial";
     }
     else {
-          console.log("User should be logged out now");
+          //console.log("User should be logged out now");
           var loggedOutElements = document.getElementsByClassName("logged-out");
           loggedOutElements[0].style.display = "initial";
           var loggedInElements = document.getElementsByClassName("logged-in");
@@ -661,7 +661,7 @@ https://stackoverflow.com/questions/19669786/check-if-element-is-visible-in-dom
   }
 
   var generateSearchResults = function(){
-    console.dir("Generate Search Results");
+    //console.dir("Generate Search Results");
 
     //Make dropdown visible
     spResultsBox.style.display = "initial";
@@ -719,7 +719,7 @@ https://stackoverflow.com/questions/19669786/check-if-element-is-visible-in-dom
   }
 
   var appendSearchResults = function(results) {
-    console.dir(results);
+    //console.dir(results);
     var songs = results.tracks.items;
     for(var i = 0; i < songs.length; i++) {
       if(songs[i].preview_url == null) songs.splice(i, 1);
@@ -838,7 +838,7 @@ function addSongToList(song) {
     songOption.displayName = addedSongs[i].name;
     songOption.innerHTML = addedSongs[i].name;
     songOption.classList.add("added-song");
-    console.dir(songOption);
+    //console.dir(songOption);
     songList.appendChild(songOption);
   }
 }
