@@ -13,7 +13,7 @@
     var canvas, ctx;
     //Effect varibles
     var cosmicChicken = false, curves = false, glowBoxes = false, triCirc = false,
-    circles = false, audioLine = false;
+    circles = false, audioLine = false, bezier = false;
 
     var glowBallTimer = 0;
 
@@ -66,7 +66,8 @@
       document.getElementById('glowboxesBox').checked = glowBoxes = true;
       document.getElementById('tricircBox').checked = triCirc = true;
       //document.getElementById('circlesBox').checked = circles = true;
-      document.getElementById('audiolineBox').checked = audioLine = true;
+      //document.getElementById('audiolineBox').checked = audioLine = true;
+      //document.getElementById('bezierBox').checked = bezier = true;
 
       //Add song name variables to the default songs
       defaultSongs = document.getElementsByClassName("default-song");
@@ -170,6 +171,9 @@
 
       if(circles)
         drawCircles(data[i], data.length, i);
+
+      if(bezier)
+        drawBezierCurves(data[i], data.length, i);
     }
 
     applyFilters();
@@ -262,6 +266,11 @@
     //Audio Line
     document.getElementById('audiolineBox').onchange = function(e){
       audioLine = e.target.checked;
+    };
+
+    //Bezier Curvers
+    document.getElementById('bezierBox').onchange = function(e){
+      bezier = e.target.checked;
     };
 
     //Circles
@@ -555,7 +564,31 @@ https://stackoverflow.com/questions/19669786/check-if-element-is-visible-in-dom
     ctx.restore();
   }
 
-  
+  //Draws bezier curves using frequency data for control points
+  function drawBezierCurves( currData, dataLength, dataIndex) {
+    ctx.save();
+
+    var firstPointX = (dataIndex / dataLength - 1) * (canvas.width / 2);
+    var firstPointY = canvas.height / 2;
+    var lastPointX = canvas.width - firstPointX;
+    var lastPointY = canvas.height / 2;
+    var cp1X = firstPointX;
+    var cp1Y = firstPointY + (currData * 3);
+    var cp2X = lastPointX;
+    var cp2Y = lastPointY - (currData * 3);
+
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = "#61FF88";
+
+    ctx.beginPath();
+
+    ctx.moveTo(firstPointX, firstPointY);
+    ctx.bezierCurveTo( cp1X, cp1Y, cp2X, cp2Y, lastPointX, lastPointY);
+
+    ctx.stroke();
+    ctx.closePath();
+    ctx.restore();
+  }
 
   //VIDEO ELEMENT HELPER FUNCTIONS
 
