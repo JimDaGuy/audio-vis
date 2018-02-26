@@ -99,11 +99,6 @@
     //Clear previous frame
     ctx.clearRect(0,0, canvas.offsetWidth, canvas.offsetHeight);
 
-    var barWidth = canvas.offsetWidth  / 64;
-    var barSpacing = 1;
-    var barHeight = 100;
-    var topSpacing = 50;
-
     ctx.lineWidth = 8;
 
     if(cosmicChicken)
@@ -664,6 +659,9 @@ https://stackoverflow.com/questions/19669786/check-if-element-is-visible-in-dom
   var appendSearchResults = function(results) {
     console.dir(results);
     var songs = results.tracks.items;
+    for(var i = 0; i < songs.length; i++) {
+      if(songs[i].preview_url == null) songs.splice(i, 1);
+    }
 
     //If there are no results
     if(songs.length == 0) {
@@ -749,7 +747,6 @@ var addSongHandlerWrapper = function (song) {
 }
 
 function addSongToList(song) {
-
   //Add the song to our Closure variable (addedSongs)
   addedSongs[addedSongs.length] = song;
   //console.dir(addedSongs);

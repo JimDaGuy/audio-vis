@@ -53,6 +53,11 @@
         margin: 0;
       }
 
+      #app-title-container {
+        overflow: hidden;
+        max-height: 60%;
+      }
+
       #app-title {
         font-family: "Shrikhand", Arial;
         color: #FF69B4;
@@ -99,6 +104,11 @@
         margin-top: 10px;
       }
 
+      #trackSelect {
+        width: 100% !important;
+        background-color: #574BE8;
+      }
+
       #trackSelect option {
         width: 100% !important;
         background-color: #574BE8;
@@ -108,6 +118,10 @@
         left: 40%;
         width: 30%;
         display: none;
+      }
+
+      #effects {
+        overflow: auto;
       }
 
       #visual-control-tabs {
