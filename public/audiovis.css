@@ -120,10 +120,6 @@
         display: none;
       }
 
-      #effects {
-        overflow: auto;
-      }
-
       #visual-control-tabs {
         width: calc(100% - 20px);
         margin-left: 10px;
@@ -138,6 +134,7 @@
         background-color: #1E6075;
         width: 33.33%;
         height: 45px;
+        overflow: hidden;
       }
 
       .nav-item.active {
@@ -159,6 +156,7 @@
         padding-top: 10px;
         background-color: #2DA89C;
         height: 10vh;
+        overflow: auto;
       }
 
       .effect-item {
@@ -217,6 +215,7 @@
         height: 50px;
         display: flex;
         align-items: center;
+        background-color: white;
       }
 
       audio {

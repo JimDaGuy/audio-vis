@@ -12,12 +12,13 @@
     //Canvas variables
     var canvas, ctx;
     //Effect varibles
-    var cosmicChicken = false, curves = false, glowBoxes = false, triCirc = false;
+    var cosmicChicken = false, curves = false, glowBoxes = false, triCirc = false,
+    circles = false;
 
     var triCircRadius, triCircRadiusPerc;
 
     //Filter Variables
-    var threshold = false, tcWaveHeight = 50, threshVal = 0;
+    var threshold = false, tcWaveHeight = 50, threshVal = 0, tintRed = false, noise = false;
 
     var defaultSongs;
     var addedSongs = [];
@@ -61,6 +62,7 @@
       //Init Graphics settings
       document.getElementById('glowboxesBox').checked = glowBoxes = true;
       document.getElementById('tricircBox').checked = triCirc = true;
+      document.getElementById('circlesBox').checked = circles = true;
 
       //Add song name variables to the default songs
       defaultSongs = document.getElementsByClassName("default-song");
@@ -144,9 +146,6 @@
     for(var i = 0; i < data.length; i++) {
       ctx.fillStyle = 'rgba(0,255,0,0.6)';
 
-      //ctx.fillRect(i * (barWidth + barSpacing),topSpacing + 256-data[i],barWidth,barHeight);
-      //ctx.fillRect(canvas.offsetWidth - i * (barWidth + barSpacing), topSpacing + 256 - data[i] - 20, barWidth, barHeight);
-
       if(curves && i <= (data.length - 30)) {
         //Custom Drawing Code
         drawCurves(data[i], (data.length - 30), i, 250, "white", 0);
@@ -158,6 +157,9 @@
 
       if(triCirc && (i % 2 == 0))
         drawTriCirc(data2[i], data.length / 2, i / 2);
+
+      if(circles)
+        drawCircles(data[i], data.length, i);
     }
 
     applyFilters();
@@ -245,11 +247,25 @@
       triCirc = e.target.checked;
     };
 
+    //Circles
+    document.getElementById('circlesBox').onchange = function(e){
+      circles = e.target.checked;
+    };
+
     //Threshold
 		document.getElementById('thresholdBox').onchange = function(e){
 			threshold = e.target.checked;
 		};
 
+    //Tint Red
+    document.getElementById('redtintBox').onchange = function(e){
+			tintRed = e.target.checked;
+		};
+
+    //Noise
+    document.getElementById('noiseBox').onchange = function(e){
+			noise = e.target.checked;
+		};
   }
 
   function playStream( audioElement, targ) {
@@ -452,6 +468,35 @@ https://stackoverflow.com/questions/19669786/check-if-element-is-visible-in-dom
     ctx.restore();
   }
 
+  function drawCircles( currData, dataLength, dataIndex) {
+    ctx.save();
+    var originX = canvas.width / 2;
+    var originY = canvas.height / 2;
+
+    ctx.lineWidth = 5;
+    if(currData > 128)
+      ctx.globalAlpha = (currData - 128) / 128;
+    else
+      ctx.globalAlpha = 0;
+    var rainbow = ctx.createRadialGradient(originX, originY, 30, originX, originY, 200);
+    rainbow.addColorStop(0,"violet");
+    rainbow.addColorStop(.15,"indigo");
+    rainbow.addColorStop(.3,"blue");
+    rainbow.addColorStop(.45,"green");
+    rainbow.addColorStop(.6,"yellow");
+    rainbow.addColorStop(.75,"orange");
+    rainbow.addColorStop(1,"red"); //Extra .10 for the outermost color
+    ctx.strokeStyle = rainbow;
+
+    var drawnCircleRadius = 3 * dataIndex;
+
+    ctx.beginPath();
+    ctx.arc(originX, originY, drawnCircleRadius, 0, 2 * Math.PI, false);
+    ctx.stroke();
+
+    ctx.restore();
+  }
+
   //VIDEO ELEMENT HELPER FUNCTIONS
 
   function drawVideo() {
@@ -483,46 +528,22 @@ https://stackoverflow.com/questions/19669786/check-if-element-is-visible-in-dom
   }
 
   function applyFilters() {
-    if(threshold) {
+    if(threshold || tintRed || noise) {
       var imageData = ctx.getImageData( 0, 0, canvas.width, canvas.height);
       var data = imageData.data;
       var length = data.length;
       var width = imageData.width;
 
       for (var i = 0; i < length; i += 4) {
-        /*
+
   				 if (tintRed) {
-  				 	// just the red channel this time
   				 	data[i] = data[i] + 100;
   				 }
 
-  				 if(invert) {
-  				 	var red = data[i], green = data[i+1], blue = data[i+2];
-  				 	data[i] = 255 - red; //set red value
-  				 	data[i+1] = 255 - green; //set blue value
-  				 	data[i+2] = 255 - blue; //set green value
-  				 	//data[i+3] is the alpha but we’re leaving that alone
-  				 }
-
-  				 //vi) noise
   				 if ( noise && Math.random () < .10 ) {
   				 	data[i] = data[i+1] = data[i+2] = 128; // graynoise
-  				 	// data[i] = data[i+1] = data[i+2] = 255; // or whitenoise
-  				 	// data[i] = data[i+1] = data[i+2] = 0; // or blacknoise
-  				 	// data[i+3] = 255; //alpha
   				 }
 
-  				 //vii) draw 2-pixel lines every 50 rows
-  				 if (lines) {
-  				 	var row = Math.floor(i/4/width);
-  				 	if (row % 50 == 0) {
-  				 		// this row
-  				 		data[i] = data[i+1] = data[i+2] = data[i+3] = 255;
-  				 		// next row
-  				 		data[ i + (width * 4)] = data[ i + ( width * 4) + 1] = data[ i + ( width * 4) + 2] = data [ i + ( width * 4) + 3] = 255;
-  				 	}
-  				 }
-  				 */
   				 if (threshold) {
   				 	var red = data[i], green = data[i+1], blue = data[i+2];
 
