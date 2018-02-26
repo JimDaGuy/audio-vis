@@ -31,6 +31,7 @@
     //Video elements
     var videoElement;
 
+    //Init Function - Sets up all initial variables for the visualizer
     function init(){
       //Setup canvas context variable
       canvas = document.querySelector('canvas');
@@ -91,6 +92,7 @@
       update();
     }
 
+    //Update Function - Grabs song data and updates the visualizer display each frame
   function update() {
     // create a new array of 8-bit integers (0-255)
     var data = new Uint8Array(NUM_SAMPLES/2);
@@ -178,12 +180,13 @@
 
     //HELPER FUNCTIONS
 
-    //Called whenever the window is resized
+    //Resize function - Resizes the canvas - called whenever the window is resized
     function resize() {
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
     }
 
+    //Sets up audio analyser node
   function createWebAudioContextWithAnalyserNode(audioElement) {
     var audioCtx, analyserNode, sourceNode;
 
@@ -206,6 +209,7 @@
     return analyserNode;
   }
 
+  //Adds proper on click and onchange values to our ui elements
   function setupUI(){
 
     //Navbar Dropdowns
@@ -281,9 +285,10 @@
 		};
   }
 
+//Play's the selected song
   function playStream( audioElement, targ) {
     audioElement.src = targ.value;
-    //audioElement.play();
+    audioElement.play();
     audioElement.volume = 0.2;
 
     if(targ.displayName != null)
@@ -292,6 +297,7 @@
       document.querySelector('#status').innerHTML = "Now playing: " + targ[targ.selectedIndex].displayName;
   }
 
+//Sets canvas to fullscreen
   function requestFullscreen( element) {
     if (element.requestFullscreen) {
       element.requestFullscreen();
@@ -305,6 +311,7 @@
     // .. and do nothing if the method is not supported
   }
 
+//Returns a random color
   function getRandomColor() {
     var red = Math.round(Math.random()*254+1);
     var green = Math.round(Math.random()*254+1);
@@ -325,6 +332,7 @@ https://stackoverflow.com/questions/19669786/check-if-element-is-visible-in-dom
     return (style.display === 'none')
   }
 
+//Checks if the tracklist dropdown is visible
   function tlDropdown() {
     var tlDropdown = document.getElementById("tracklist-dropdown");
     if(isHidden(tlDropdown)){
@@ -334,6 +342,7 @@ https://stackoverflow.com/questions/19669786/check-if-element-is-visible-in-dom
       tlDropdown.style.display = "none";
   }
 
+  //Checks if the effects dropdown is visible
   function efDropdown() {
     var efDropdown = document.getElementById("effects-dropdown");
     efDropdown.style.height = 60 + (.1 * window.innerHeight) + "px";
@@ -346,6 +355,7 @@ https://stackoverflow.com/questions/19669786/check-if-element-is-visible-in-dom
   }
 
   //DRAWING HELPER FUNCTIONS
+  //Draws quadratic curves in a circle around the center of the canvas
   function drawCurves(currData, dataLength, dataIndex, radius, stColor, degreeOffset) {
     ctx.save();
 
@@ -405,6 +415,8 @@ https://stackoverflow.com/questions/19669786/check-if-element-is-visible-in-dom
     ctx.restore();
   }
 
+  //Draws several rectangles at the height of their corresponding
+  //frequency data
   function drawGlowBoxes( currData, dataLength, dataIndex) {
     var boxMaxHeightPercent = 40;
 
@@ -437,6 +449,8 @@ https://stackoverflow.com/questions/19669786/check-if-element-is-visible-in-dom
     ctx.restore();
   }
 
+  //Draws triangular looking waves around a circle
+  //Their height can be modified in the app
   function drawTriCirc(currData, dataLength, dataIndex) {
     ctx.save();
 
@@ -481,6 +495,8 @@ https://stackoverflow.com/questions/19669786/check-if-element-is-visible-in-dom
     ctx.restore();
   }
 
+  //Draws rainbow circles and changes their opacity
+  //depending on their frequency data values
   function drawCircles( currData, dataLength, dataIndex) {
     if(currData > 128) {
       ctx.save();
@@ -509,6 +525,7 @@ https://stackoverflow.com/questions/19669786/check-if-element-is-visible-in-dom
     }
   }
 
+  //Draws a line matching with the height of the audio data
   function drawAudioLine(currData) {
     //I'll come back to this some other time
     /*
@@ -538,8 +555,12 @@ https://stackoverflow.com/questions/19669786/check-if-element-is-visible-in-dom
     ctx.restore();
   }
 
+  
+
   //VIDEO ELEMENT HELPER FUNCTIONS
 
+  //Draws our video to the canvas, chroma key's it,
+  // and inverts and colors that weren't chroma keyed
   function drawVideo() {
     ctx.drawImage(videoElement, 0, 0, videoElement.clientWidth, videoElement.clientHeight);
     var imageData = ctx.getImageData( 0, 0, videoElement.clientWidth, videoElement.clientHeight);
@@ -568,6 +589,7 @@ https://stackoverflow.com/questions/19669786/check-if-element-is-visible-in-dom
     ctx.putImageData(imageData, 0, 0);
   }
 
+  //Applies any filter effects that were selected to the canvas
   function applyFilters() {
     if(threshold || tintRed || noise) {
       var imageData = ctx.getImageData( 0, 0, canvas.width, canvas.height);
@@ -645,24 +667,12 @@ https://stackoverflow.com/questions/19669786/check-if-element-is-visible-in-dom
     }
   }
 
-  //My custom Spotify CODE
+  //My custom Spotify CODE -- I wrote these myself after modifying
+  //Some of the start code from the Spotify API examples
 
-  var grabSongPreviewLink = function(songCode) {
-    var requestLink = 'https://api.spotify.com/v1/tracks/' + songCode;
-    $.ajax({
-      url: requestLink,
-      headers: {
-        'Authorization': 'Bearer ' + access_token
-      }
-    }).done(function(data) {
-
-      return data.preview_url;
-    });
-  }
-
+//Deletes previous search results and calls songSearch() with a query
+//that the user has entered in the search field
   var generateSearchResults = function(){
-    //console.dir("Generate Search Results");
-
     //Make dropdown visible
     spResultsBox.style.display = "initial";
 
@@ -694,6 +704,8 @@ https://stackoverflow.com/questions/19669786/check-if-element-is-visible-in-dom
 
   }
 
+//Makes an API call with the given search query, calls
+//appendSearchResults() with the result of the search
   function songSearch(songQuery) {
     var fixedQuery = "";
     //Replace spaces with + to convert the query to the correct request format
@@ -718,6 +730,8 @@ https://stackoverflow.com/questions/19669786/check-if-element-is-visible-in-dom
     });
   }
 
+  //Takes the search results, creates elements for them,
+  //and adds them to the search box
   var appendSearchResults = function(results) {
     //console.dir(results);
     var songs = results.tracks.items;
@@ -809,6 +823,7 @@ var addSongHandlerWrapper = function (song) {
   return eventHandler;
 }
 
+//Adds a song to the tracklist so the user can select it
 function addSongToList(song) {
   //Add the song to our Closure variable (addedSongs)
   addedSongs[addedSongs.length] = song;
