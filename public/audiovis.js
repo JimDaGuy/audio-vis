@@ -13,7 +13,9 @@
     var canvas, ctx;
     //Effect varibles
     var cosmicChicken = false, curves = false, glowBoxes = false, triCirc = false,
-    circles = false;
+    circles = false, audioLine = false;
+
+    var glowBallTimer = 0;
 
     var triCircRadius, triCircRadiusPerc;
 
@@ -62,7 +64,8 @@
       //Init Graphics settings
       document.getElementById('glowboxesBox').checked = glowBoxes = true;
       document.getElementById('tricircBox').checked = triCirc = true;
-      document.getElementById('circlesBox').checked = circles = true;
+      //document.getElementById('circlesBox').checked = circles = true;
+      document.getElementById('audiolineBox').checked = audioLine = true;
 
       //Add song name variables to the default songs
       defaultSongs = document.getElementsByClassName("default-song");
@@ -140,6 +143,11 @@
       ctx.stroke();
 
       ctx.restore();
+    }
+
+    if(audioLine) {
+      drawAudioLine(data);
+      //glowBallTimer++;
     }
 
     //Called for each 0-255 value passed in
@@ -245,6 +253,11 @@
     //Triangles Circle
     document.getElementById('tricircBox').onchange = function(e){
       triCirc = e.target.checked;
+    };
+
+    //Audio Line
+    document.getElementById('audiolineBox').onchange = function(e){
+      audioLine = e.target.checked;
     };
 
     //Circles
@@ -469,30 +482,58 @@ https://stackoverflow.com/questions/19669786/check-if-element-is-visible-in-dom
   }
 
   function drawCircles( currData, dataLength, dataIndex) {
-    ctx.save();
-    var originX = canvas.width / 2;
-    var originY = canvas.height / 2;
+    if(currData > 128) {
+      ctx.save();
+      var originX = canvas.width / 2;
+      var originY = canvas.height / 2;
 
-    ctx.lineWidth = 5;
-    if(currData > 128)
+      ctx.lineWidth = 5;
       ctx.globalAlpha = (currData - 128) / 128;
-    else
-      ctx.globalAlpha = 0;
-    var rainbow = ctx.createRadialGradient(originX, originY, 30, originX, originY, 200);
-    rainbow.addColorStop(0,"violet");
-    rainbow.addColorStop(.15,"indigo");
-    rainbow.addColorStop(.3,"blue");
-    rainbow.addColorStop(.45,"green");
-    rainbow.addColorStop(.6,"yellow");
-    rainbow.addColorStop(.75,"orange");
-    rainbow.addColorStop(1,"red"); //Extra .10 for the outermost color
-    ctx.strokeStyle = rainbow;
+      var rainbow = ctx.createRadialGradient(originX, originY, 30, originX, originY, 200);
+      rainbow.addColorStop(0,"violet");
+      rainbow.addColorStop(.15,"indigo");
+      rainbow.addColorStop(.3,"blue");
+      rainbow.addColorStop(.45,"green");
+      rainbow.addColorStop(.6,"yellow");
+      rainbow.addColorStop(.75,"orange");
+      rainbow.addColorStop(1,"red");
+      ctx.strokeStyle = rainbow;
 
-    var drawnCircleRadius = 3 * dataIndex;
+      var drawnCircleRadius = 3 * dataIndex;
+
+      ctx.beginPath();
+      ctx.arc(originX, originY, drawnCircleRadius, 0, 2 * Math.PI, false);
+      ctx.stroke();
+
+      ctx.restore();
+    }
+  }
+
+  function drawAudioLine(currData) {
+    //I'll come back to this some other time
+    /*
+    var glowBallTimerMax = 4 * data.length;
+    if(glowBallTimer >= glowBallTimerMax)
+      glowBallTimer = 1;
+    //Find location for glow ball
+    var currGbIndex = Math.floor((glowBallTimer / glowBallTimerMax) * (data.length - 1)
+    var currentGbX = canvas.width * (glowBallTimer / glowBallTimerMax);
+    var currSlope = data[currGbIndex + 1] - data[currGbIndex] / (canvas.width / data.length);
+    var currSlopeHeight = data[currGbIndex + 1] - data[currGbIndex] / (canvas.width / data.length);
+    var currentGbY = data[currGbIndex] + (currSlope * (currentGbIndex / data.length * canvas.width));
+    */
+    ctx.save();
+
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = "violet";
 
     ctx.beginPath();
-    ctx.arc(originX, originY, drawnCircleRadius, 0, 2 * Math.PI, false);
+    ctx.moveTo(0, (canvas.height / 2) - currData[0]);
+    for(var i = 1; i < currData.length; i++) {
+      ctx.lineTo((canvas.width / currData.length) * i, (canvas.height / 2) - currData[i]);
+    }
     ctx.stroke();
+    ctx.closePath();
 
     ctx.restore();
   }
@@ -727,6 +768,7 @@ https://stackoverflow.com/questions/19669786/check-if-element-is-visible-in-dom
       searchItemIcon.classList.add("add-button");
       var iconId = "song" + i;
       searchItemIcon.id = iconId;
+      searchItemIcon.innerHTML = "Add Song";
 
       //Add event handler for adding the searchItem
       searchItemIcon.onclick = addSongHandlerWrapper(currentSong);

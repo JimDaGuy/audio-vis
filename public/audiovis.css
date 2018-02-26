@@ -272,7 +272,7 @@
       .search-item {
         width: 100%;
         text-overflow: ellipsis;
-        background-color: orange;
+        background-color: lightblue;
         border: 3px solid purple;
       }
 
@@ -293,11 +293,13 @@
       }
 
       .add-button {
-        background-color: green;
-        width: 20px;
-        height: 20px;
+        background-color: #0A547F;
+        width: 85px;
+        height: 25px;
+        padding: 0 5px;
+        border-radius: 5px;
       }
 
       .add-button:hover {
-        background-color: blue;
+        background-color: green;
       }
