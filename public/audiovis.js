@@ -1,103 +1,112 @@
 //Setup IIFE
-(function(){
-    'use strict';
+(function() {
+  "use strict";
 
-    //IIFE scope variables
+  //IIFE scope variables
 
-    //Audio variables
-    var NUM_SAMPLES = 256, audioElement, analyserNode,
-    SOUND_1 = 'media/New Adventure Theme.mp3', SOUND_2 = 'media/Peanuts Theme.mp3',
-    SOUND_3 = 'media/The Picard Song.mp3';
+  //Audio variables
+  var NUM_SAMPLES = 256,
+    audioElement,
+    analyserNode,
+    SOUND_1 = "media/New Adventure Theme.mp3",
+    SOUND_2 = "media/Peanuts Theme.mp3",
+    SOUND_3 = "media/The Picard Song.mp3";
 
-    //Canvas variables
-    var canvas, ctx;
-    //Effect varibles
-    var cosmicChicken = false, curves = false, glowBoxes = false, triCirc = false,
-    circles = false, audioLine = false, bezier = false;
+  //Canvas variables
+  var canvas, ctx;
+  //Effect varibles
+  var cosmicChicken = false,
+    curves = false,
+    glowBoxes = false,
+    triCirc = false,
+    circles = false,
+    audioLine = false,
+    bezier = false;
 
-    var glowBallTimer = 0;
+  var glowBallTimer = 0;
 
-    var triCircRadius, triCircRadiusPerc;
+  var triCircRadius, triCircRadiusPerc;
 
-    //Filter Variables
-    var threshold = false, tcWaveHeight = 50, threshVal = 0, tintRed = false, noise = false;
+  //Filter Variables
+  var threshold = false,
+    tcWaveHeight = 50,
+    threshVal = 0,
+    tintRed = false,
+    noise = false;
 
-    var defaultSongs;
-    var addedSongs = [];
+  var defaultSongs;
+  var addedSongs = [];
 
-    //Spotify Element Variables
-    var spSearchButton, spSearchField, spResultsBox, spSearches, spAppendSpan;
+  //Spotify Element Variables
+  var spSearchButton, spSearchField, spResultsBox, spSearches, spAppendSpan;
 
-    //Video elements
-    var videoElement;
+  //Video elements
+  var videoElement;
 
-    //Init Function - Sets up all initial variables for the visualizer
-    function init(){
-      //Setup canvas context variable
-      canvas = document.querySelector('canvas');
-      ctx = canvas.getContext("2d");
+  //Init Function - Sets up all initial variables for the visualizer
+  function init() {
+    //Setup canvas context variable
+    canvas = document.querySelector("canvas");
+    ctx = canvas.getContext("2d");
 
-      ctx.canvas.width  = window.innerWidth;
-      ctx.canvas.height = window.innerHeight;
+    ctx.canvas.width = window.innerWidth;
+    ctx.canvas.height = window.innerHeight;
 
-      //Tri circ radius elements
-      triCircRadiusPerc = 30;
-      triCircRadius = canvas.height * (triCircRadiusPerc / 100);
+    //Tri circ radius elements
+    triCircRadiusPerc = 30;
+    triCircRadius = canvas.height * (triCircRadiusPerc / 100);
 
-      videoElement = document.querySelector('video');
+    videoElement = document.querySelector("video");
 
-      videoElement.width = 5/6 * window.innerWidth;
-      videoElement.height = 5/6 * window.innerHeight;
+    videoElement.width = (5 / 6) * window.innerWidth;
+    videoElement.height = (5 / 6) * window.innerHeight;
 
-      //Set variable for audio element
-      audioElement = document.querySelector('audio');
-      /*
+    setupUI();
+
+    //Init Graphics settings
+    document.getElementById("glowboxesBox").checked = glowBoxes = true;
+    document.getElementById("tricircBox").checked = triCirc = true;
+
+    //Add song name variables to the default songs
+    defaultSongs = document.getElementsByClassName("default-song");
+    defaultSongs[0].displayName = "New Adventure Theme";
+    defaultSongs[1].displayName = "Peanuts Theme";
+    defaultSongs[2].displayName = "The Picard Song";
+
+    //Set Closure-scoped variables for Spotify elements
+    spSearchButton = document.getElementById("sp-search-button");
+    spSearchField = document.getElementById("sp-search-field");
+    spSearchField.oninput = generateSearchResults;
+    spResultsBox = document.getElementById("sp-results-box");
+    spSearches = document.getElementById("sp-searches");
+    spAppendSpan = document.getElementById("sp-append-span");
+
+    window.onresize = resize;
+  }
+
+  function initAudio() {
+    //Set variable for audio element
+    audioElement = document.querySelector("audio");
+    /*
       Google Chrome had trouble requesting songs from the Spotify Preview links.
       After some googling I found this one-line fix
       Source: https://stackoverflow.com/questions/31308679/mediaelementaudiosource-outputs-zeros-due-to-cors-access-restrictions-local-mp3
       */
-      audioElement.crossOrigin = "anonymous";
+    audioElement.crossOrigin = "anonymous";
 
-      // Initialize analyser node with helper function
-      analyserNode = createWebAudioContextWithAnalyserNode(audioElement);
-      setupUI();
+    // Initialize analyser node with helper function
+    analyserNode = createWebAudioContextWithAnalyserNode(audioElement);
+    // load and play default sound into audio element
+    playStream(audioElement, defaultSongs[0]);
 
-      //Init Graphics settings
-      document.getElementById('glowboxesBox').checked = glowBoxes = true;
-      document.getElementById('tricircBox').checked = triCirc = true;
-      //document.getElementById('circlesBox').checked = circles = true;
-      //document.getElementById('audiolineBox').checked = audioLine = true;
-      //document.getElementById('bezierBox').checked = bezier = true;
+    update();
+  }
 
-      //Add song name variables to the default songs
-      defaultSongs = document.getElementsByClassName("default-song");
-      defaultSongs[0].displayName = "New Adventure Theme";
-      defaultSongs[1].displayName = "Peanuts Theme";
-      defaultSongs[2].displayName = "The Picard Song";
-
-      // load and play default sound into audio element
-      var firstOption = document.getElementById("defaultOption");
-      //console.dir(defaultSongs[0]);
-      playStream( audioElement, defaultSongs[0]);
-
-      //Set Closure-scoped variables for Spotify elements
-      spSearchButton = document.getElementById("sp-search-button");
-      spSearchField = document.getElementById('sp-search-field');
-      spSearchField.oninput = generateSearchResults;
-      spResultsBox = document.getElementById('sp-results-box');
-      spSearches = document.getElementById('sp-searches');
-      spAppendSpan = document.getElementById('sp-append-span');
-
-      window.onresize = resize;
-
-      update();
-    }
-
-    //Update Function - Grabs song data and updates the visualizer display each frame
+  //Update Function - Grabs song data and updates the visualizer display each frame
   function update() {
     // create a new array of 8-bit integers (0-255)
-    var data = new Uint8Array(NUM_SAMPLES/2);
-    var data2 = new Uint8Array(NUM_SAMPLES/2);
+    var data = new Uint8Array(NUM_SAMPLES / 2);
+    var data2 = new Uint8Array(NUM_SAMPLES / 2);
 
     //Data 1 is frequency data
     analyserNode.getByteFrequencyData(data);
@@ -105,33 +114,31 @@
     analyserNode.getByteTimeDomainData(data2);
 
     //Clear previous frame
-    ctx.clearRect(0,0, canvas.offsetWidth, canvas.offsetHeight);
+    ctx.clearRect(0, 0, canvas.offsetWidth, canvas.offsetHeight);
 
     ctx.lineWidth = 8;
 
-    if(cosmicChicken)
-      drawVideo();
+    if (cosmicChicken) drawVideo();
 
-    if(glowBoxes)
-    {
-        ctx.save();
+    if (glowBoxes) {
+      ctx.save();
 
-        ctx.lineWidth = 5;
-        ctx.strokeStyle = "#DDA0DD";
-        ctx.shadowBlur = 10;
-        ctx.shadowColor = "#EE82EE";
+      ctx.lineWidth = 5;
+      ctx.strokeStyle = "#DDA0DD";
+      ctx.shadowBlur = 10;
+      ctx.shadowColor = "#EE82EE";
 
-        //Draw glow boxes base line
-        ctx.beginPath();
-        ctx.moveTo(0, canvas.offsetHeight / 2);
-        ctx.lineTo(canvas.offsetWidth, canvas.offsetHeight / 2);
-        ctx.closePath();
-        ctx.stroke();
+      //Draw glow boxes base line
+      ctx.beginPath();
+      ctx.moveTo(0, canvas.offsetHeight / 2);
+      ctx.lineTo(canvas.offsetWidth, canvas.offsetHeight / 2);
+      ctx.closePath();
+      ctx.stroke();
 
-        ctx.restore();
+      ctx.restore();
     }
 
-    if(triCirc) {
+    if (triCirc) {
       ctx.save();
 
       ctx.lineWidth = 1;
@@ -141,39 +148,42 @@
 
       //Draw base Circle
       ctx.beginPath();
-      ctx.arc(canvas.width / 2, canvas.height / 2, triCircRadius, 0, 2 * Math.PI, false);
+      ctx.arc(
+        canvas.width / 2,
+        canvas.height / 2,
+        triCircRadius,
+        0,
+        2 * Math.PI,
+        false
+      );
       ctx.closePath();
       ctx.stroke();
 
       ctx.restore();
     }
 
-    if(audioLine) {
+    if (audioLine) {
       drawAudioLine(data);
       //glowBallTimer++;
     }
 
     //Called for each 0-255 value passed in
-    for(var i = 0; i < data.length; i++) {
-      ctx.fillStyle = 'rgba(0,255,0,0.6)';
+    for (var i = 0; i < data.length; i++) {
+      ctx.fillStyle = "rgba(0,255,0,0.6)";
 
-      if(curves && i <= (data.length - 30)) {
+      if (curves && i <= data.length - 30) {
         //Custom Drawing Code
-        drawCurves(data[i], (data.length - 30), i, 250, "white", 0);
-        drawCurves(data[i], (data.length - 30), i, 200, "purple", 0);
+        drawCurves(data[i], data.length - 30, i, 250, "white", 0);
+        drawCurves(data[i], data.length - 30, i, 200, "purple", 0);
       }
 
-      if(glowBoxes)
-        drawGlowBoxes(data[i], data.length, i);
+      if (glowBoxes) drawGlowBoxes(data[i], data.length, i);
 
-      if(triCirc && (i % 2 == 0))
-        drawTriCirc(data2[i], data.length / 2, i / 2);
+      if (triCirc && i % 2 == 0) drawTriCirc(data2[i], data.length / 2, i / 2);
 
-      if(circles)
-        drawCircles(data[i], data.length, i);
+      if (circles) drawCircles(data[i], data.length, i);
 
-      if(bezier)
-        drawBezierCurves(data[i], data.length, i);
+      if (bezier) drawBezierCurves(data[i], data.length, i);
     }
 
     applyFilters();
@@ -182,20 +192,20 @@
     requestAnimationFrame(update);
   }
 
-    //HELPER FUNCTIONS
+  //HELPER FUNCTIONS
 
-    //Resize function - Resizes the canvas - called whenever the window is resized
-    function resize() {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
-    }
+  //Resize function - Resizes the canvas - called whenever the window is resized
+  function resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
 
-    //Sets up audio analyser node
+  //Sets up audio analyser node
   function createWebAudioContextWithAnalyserNode(audioElement) {
     var audioCtx, analyserNode, sourceNode;
 
     // create new AudioContext
-    audioCtx = new (window.AudioContext || window.webkitAudioContext);
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
     // create an analyser node
     analyserNode = audioCtx.createAnalyser();
@@ -214,23 +224,21 @@
   }
 
   //Adds proper on click and onchange values to our ui elements
-  function setupUI(){
-
+  function setupUI() {
     //Navbar Dropdowns
     document.querySelector("#tracklist-button").onclick = tlDropdown;
     document.querySelector("#effects-button").onclick = efDropdown;
 
-
-    document.querySelector("#trackSelect").onchange = function(e){
+    document.querySelector("#trackSelect").onchange = function(e) {
       playStream(audioElement, e.target);
     };
 
-    document.querySelector("#tcSlider").onchange = function(e){
+    document.querySelector("#tcSlider").onchange = function(e) {
       document.querySelector("#tcSliderResults").innerHTML = e.target.value;
       tcWaveHeight = e.target.value;
     };
 
-    document.querySelector("#thSlider").onchange = function(e){
+    document.querySelector("#thSlider").onchange = function(e) {
       document.querySelector("#thSliderResults").innerHTML = e.target.value;
       threshVal = e.target.value;
     };
@@ -244,75 +252,78 @@
     //Sliders and Checkboxes
 
     //Cosmic Chicken
-    document.getElementById('cosmicChickenBox').onchange = function(e){
+    document.getElementById("cosmicChickenBox").onchange = function(e) {
       cosmicChicken = e.target.checked;
     };
 
     //Curves
-    document.getElementById('curvesBox').onchange = function(e){
+    document.getElementById("curvesBox").onchange = function(e) {
       curves = e.target.checked;
     };
 
     //Glow Boxes
-    document.getElementById('glowboxesBox').onchange = function(e){
+    document.getElementById("glowboxesBox").onchange = function(e) {
       glowBoxes = e.target.checked;
     };
 
     //Triangles Circle
-    document.getElementById('tricircBox').onchange = function(e){
+    document.getElementById("tricircBox").onchange = function(e) {
       triCirc = e.target.checked;
     };
 
     //Audio Line
-    document.getElementById('audiolineBox').onchange = function(e){
+    document.getElementById("audiolineBox").onchange = function(e) {
       audioLine = e.target.checked;
     };
 
     //Bezier Curvers
-    document.getElementById('bezierBox').onchange = function(e){
+    document.getElementById("bezierBox").onchange = function(e) {
       bezier = e.target.checked;
     };
 
     //Circles
-    document.getElementById('circlesBox').onchange = function(e){
+    document.getElementById("circlesBox").onchange = function(e) {
       circles = e.target.checked;
     };
 
     //Threshold
-		document.getElementById('thresholdBox').onchange = function(e){
-			threshold = e.target.checked;
-		};
+    document.getElementById("thresholdBox").onchange = function(e) {
+      threshold = e.target.checked;
+    };
 
     //Tint Red
-    document.getElementById('redtintBox').onchange = function(e){
-			tintRed = e.target.checked;
-		};
+    document.getElementById("redtintBox").onchange = function(e) {
+      tintRed = e.target.checked;
+    };
 
     //Noise
-    document.getElementById('noiseBox').onchange = function(e){
-			noise = e.target.checked;
-		};
+    document.getElementById("noiseBox").onchange = function(e) {
+      noise = e.target.checked;
+    };
   }
 
-//Play's the selected song
-  function playStream( audioElement, targ) {
+  //Play's the selected song
+  function playStream(audioElement, targ) {
     audioElement.src = targ.value;
     audioElement.play();
     audioElement.volume = 0.2;
 
-    if(targ.displayName != null)
-      document.querySelector('#status').innerHTML = "Now playing: " + targ.displayName;
+    if (targ.displayName != null)
+      document.querySelector("#status").innerHTML =
+        "Now playing: " + targ.displayName;
     else
-      document.querySelector('#status').innerHTML = "Now playing: " + targ[targ.selectedIndex].displayName;
+      document.querySelector("#status").innerHTML =
+        "Now playing: " + targ[targ.selectedIndex].displayName;
   }
 
-//Sets canvas to fullscreen
-  function requestFullscreen( element) {
+  //Sets canvas to fullscreen
+  function requestFullscreen(element) {
     if (element.requestFullscreen) {
       element.requestFullscreen();
     } else if (element.mozRequestFullscreen) {
       element.mozRequestFullscreen();
-    } else if (element.mozRequestFullScreen) { // camel-cased 'S' was changed to 's' in spec
+    } else if (element.mozRequestFullScreen) {
+      // camel-cased 'S' was changed to 's' in spec
       element.mozRequestFullScreen();
     } else if (element.webkitRequestFullscreen) {
       element.webkitRequestFullscreen();
@@ -320,17 +331,17 @@
     // .. and do nothing if the method is not supported
   }
 
-//Returns a random color
+  //Returns a random color
   function getRandomColor() {
-    var red = Math.round(Math.random()*254+1);
-    var green = Math.round(Math.random()*254+1);
-    var blue=Math.round(Math.random()*254+1);
-    var color='rgb('+red+','+green+','+blue+')';
+    var red = Math.round(Math.random() * 254 + 1);
+    var green = Math.round(Math.random() * 254 + 1);
+    var blue = Math.round(Math.random() * 254 + 1);
+    var color = "rgb(" + red + "," + green + "," + blue + ")";
     //	var color='rgba('+red+','+green+','+blue+',0.50)'; // 0.50 alpha
     return color;
   }
 
-/*
+  /*
 Borrowed this short function to determine if an element is displayed or nothing
 Used for my dropdown buttons
 Found here:
@@ -338,34 +349,38 @@ https://stackoverflow.com/questions/19669786/check-if-element-is-visible-in-dom
 */
   function isHidden(el) {
     var style = window.getComputedStyle(el);
-    return (style.display === 'none')
+    return style.display === "none";
   }
 
-//Checks if the tracklist dropdown is visible
+  //Checks if the tracklist dropdown is visible
   function tlDropdown() {
     var tlDropdown = document.getElementById("tracklist-dropdown");
-    if(isHidden(tlDropdown)){
+    if (isHidden(tlDropdown)) {
       tlDropdown.style.display = "initial";
-    }
-    else
-      tlDropdown.style.display = "none";
+    } else tlDropdown.style.display = "none";
   }
 
   //Checks if the effects dropdown is visible
   function efDropdown() {
     var efDropdown = document.getElementById("effects-dropdown");
-    efDropdown.style.height = 60 + (.1 * window.innerHeight) + "px";
-    if(isHidden(efDropdown)){
+    efDropdown.style.height = 60 + 0.1 * window.innerHeight + "px";
+    if (isHidden(efDropdown)) {
       efDropdown.style.display = "initial";
-    }
-    else {
+    } else {
       efDropdown.style.display = "none";
     }
   }
 
   //DRAWING HELPER FUNCTIONS
   //Draws quadratic curves in a circle around the center of the canvas
-  function drawCurves(currData, dataLength, dataIndex, radius, stColor, degreeOffset) {
+  function drawCurves(
+    currData,
+    dataLength,
+    dataIndex,
+    radius,
+    stColor,
+    degreeOffset
+  ) {
     ctx.save();
 
     //Variables I can make parameters for later
@@ -373,26 +388,33 @@ https://stackoverflow.com/questions/19669786/check-if-element-is-visible-in-dom
     var radiusCoeff = currData / 256;
     var dcMaxRadius = radiusCoeff * radius;
     var radiansPerInterval = (2 * Math.PI) / dataLength;
-    var radianOffset = degreeOffset / 180 * Math.PI;
+    var radianOffset = (degreeOffset / 180) * Math.PI;
 
     //Create variables for the radial value of three different angles
-    if(dataIndex == 0)
-      var prevRad = ((2 * Math.PI) - radiansPerInterval) - (1/16 * Math.PI) + radianOffset;
+    if (dataIndex == 0)
+      var prevRad =
+        2 * Math.PI - radiansPerInterval - (1 / 16) * Math.PI + radianOffset;
     else
-      var prevRad = (radiansPerInterval * (dataIndex - 1)) - (1/16 * Math.PI) + radianOffset;
+      var prevRad =
+        radiansPerInterval * (dataIndex - 1) -
+        (1 / 16) * Math.PI +
+        radianOffset;
 
-    var currRad = (radiansPerInterval * dataIndex) + radianOffset;
+    var currRad = radiansPerInterval * dataIndex + radianOffset;
 
     //Set point for further out radian
-    if(dataIndex == (dataLength - 1))
-      var futureRad = 0 + (1/16 * Math.PI) + radianOffset;
+    if (dataIndex == dataLength - 1)
+      var futureRad = 0 + (1 / 16) * Math.PI + radianOffset;
     else
-      var futureRad = (radiansPerInterval * (dataIndex + 1)) + (1/16 * Math.PI)  + radianOffset;
+      var futureRad =
+        radiansPerInterval * (dataIndex + 1) +
+        (1 / 16) * Math.PI +
+        radianOffset;
 
     //Find points we need
-    var firstCircRadius = 1/4 * dcMaxRadius;
-    var secondCircRadius = 1/2 * dcMaxRadius;
-    var thirdCircRadius = 3/4 * dcMaxRadius;
+    var firstCircRadius = (1 / 4) * dcMaxRadius;
+    var secondCircRadius = (1 / 2) * dcMaxRadius;
+    var thirdCircRadius = (3 / 4) * dcMaxRadius;
 
     var firstCircPoint = {};
     firstCircPoint.x = center.x + firstCircRadius * Math.cos(currRad);
@@ -414,11 +436,21 @@ https://stackoverflow.com/questions/19669786/check-if-element-is-visible-in-dom
     //Draw quadratic curves
     ctx.beginPath();
     ctx.moveTo(center.x, center.y);
-    ctx.quadraticCurveTo(secondCircPoint.x, secondCircPoint.y, thirdCircPoint.x, thirdCircPoint.y);
+    ctx.quadraticCurveTo(
+      secondCircPoint.x,
+      secondCircPoint.y,
+      thirdCircPoint.x,
+      thirdCircPoint.y
+    );
     ctx.stroke();
     ctx.beginPath();
-    ctx.moveTo( firstCircPoint.x, firstCircPoint.y);
-    ctx.quadraticCurveTo(thirdCircPoint.x, thirdCircPoint.y, fourthCircPoint.x, fourthCircPoint.y);
+    ctx.moveTo(firstCircPoint.x, firstCircPoint.y);
+    ctx.quadraticCurveTo(
+      thirdCircPoint.x,
+      thirdCircPoint.y,
+      fourthCircPoint.x,
+      fourthCircPoint.y
+    );
     ctx.stroke();
 
     ctx.restore();
@@ -426,7 +458,7 @@ https://stackoverflow.com/questions/19669786/check-if-element-is-visible-in-dom
 
   //Draws several rectangles at the height of their corresponding
   //frequency data
-  function drawGlowBoxes( currData, dataLength, dataIndex) {
+  function drawGlowBoxes(currData, dataLength, dataIndex) {
     var boxMaxHeightPercent = 40;
 
     var boxHeightPx = canvas.height * (boxMaxHeightPercent / 100);
@@ -435,15 +467,20 @@ https://stackoverflow.com/questions/19669786/check-if-element-is-visible-in-dom
     var boxHeight = (currData / 256) * boxHeightPx;
 
     var currBoxX = boxWidth * dataIndex;
-    var currBoxY = (canvas.height / 2) - boxHeight;
+    var currBoxY = canvas.height / 2 - boxHeight;
 
     ctx.save();
 
-    ctx.globalAlpha = .7;
+    ctx.globalAlpha = 0.7;
 
-    var glowGradient = ctx.createLinearGradient(0, canvas.height / 2, canvas.width, canvas.height / 2);
-    glowGradient.addColorStop(0,"#BA55D3");
-    glowGradient.addColorStop(1,"red");
+    var glowGradient = ctx.createLinearGradient(
+      0,
+      canvas.height / 2,
+      canvas.width,
+      canvas.height / 2
+    );
+    glowGradient.addColorStop(0, "#BA55D3");
+    glowGradient.addColorStop(1, "red");
 
     ctx.fillStyle = glowGradient;
 
@@ -463,14 +500,12 @@ https://stackoverflow.com/questions/19669786/check-if-element-is-visible-in-dom
   function drawTriCirc(currData, dataLength, dataIndex) {
     ctx.save();
 
-    var radPerAngle = 2 * Math.PI / dataLength;
+    var radPerAngle = (2 * Math.PI) / dataLength;
     var currRad = radPerAngle * dataIndex;
-    var midRad = radPerAngle * (dataIndex + .5);
+    var midRad = radPerAngle * (dataIndex + 0.5);
     var nextRad;
-    if(dataIndex == (dataLength - 1))
-      nextRad = 0;
-    else
-      nextRad = radPerAngle * (dataIndex + 1);
+    if (dataIndex == dataLength - 1) nextRad = 0;
+    else nextRad = radPerAngle * (dataIndex + 1);
 
     var radiusOffset = tcWaveHeight * ((currData - 125) / 15);
     var triRadius = triCircRadius + radiusOffset;
@@ -478,16 +513,16 @@ https://stackoverflow.com/questions/19669786/check-if-element-is-visible-in-dom
     var originX = canvas.width / 2;
     var originY = canvas.height / 2;
 
-    var triPointX = originX + (triRadius * Math.cos((2 * Math.PI) - midRad));
-    var triPointY = originY - (triRadius * Math.sin((2 * Math.PI) - midRad));
+    var triPointX = originX + triRadius * Math.cos(2 * Math.PI - midRad);
+    var triPointY = originY - triRadius * Math.sin(2 * Math.PI - midRad);
 
-    var currRadX = originX + (triCircRadius * Math.cos(currRad));
-    var currRadY = originY + (triCircRadius * Math.sin(currRad));
+    var currRadX = originX + triCircRadius * Math.cos(currRad);
+    var currRadY = originY + triCircRadius * Math.sin(currRad);
 
-    var nextRadX = originX + (triCircRadius * Math.cos(nextRad));
-    var nextRadY = originY + (triCircRadius * Math.sin(nextRad));
+    var nextRadX = originX + triCircRadius * Math.cos(nextRad);
+    var nextRadY = originY + triCircRadius * Math.sin(nextRad);
 
-    ctx.globalAlpha = .6;
+    ctx.globalAlpha = 0.6;
     ctx.lineWidth = 2;
     ctx.fillStyle = "#2C237F";
     ctx.strokeStyle = "#2C237F";
@@ -506,22 +541,29 @@ https://stackoverflow.com/questions/19669786/check-if-element-is-visible-in-dom
 
   //Draws rainbow circles and changes their opacity
   //depending on their frequency data values
-  function drawCircles( currData, dataLength, dataIndex) {
-    if(currData > 128) {
+  function drawCircles(currData, dataLength, dataIndex) {
+    if (currData > 128) {
       ctx.save();
       var originX = canvas.width / 2;
       var originY = canvas.height / 2;
 
       ctx.lineWidth = 5;
       ctx.globalAlpha = (currData - 128) / 128;
-      var rainbow = ctx.createRadialGradient(originX, originY, 30, originX, originY, 200);
-      rainbow.addColorStop(0,"violet");
-      rainbow.addColorStop(.15,"indigo");
-      rainbow.addColorStop(.3,"blue");
-      rainbow.addColorStop(.45,"green");
-      rainbow.addColorStop(.6,"yellow");
-      rainbow.addColorStop(.75,"orange");
-      rainbow.addColorStop(1,"red");
+      var rainbow = ctx.createRadialGradient(
+        originX,
+        originY,
+        30,
+        originX,
+        originY,
+        200
+      );
+      rainbow.addColorStop(0, "violet");
+      rainbow.addColorStop(0.15, "indigo");
+      rainbow.addColorStop(0.3, "blue");
+      rainbow.addColorStop(0.45, "green");
+      rainbow.addColorStop(0.6, "yellow");
+      rainbow.addColorStop(0.75, "orange");
+      rainbow.addColorStop(1, "red");
       ctx.strokeStyle = rainbow;
 
       var drawnCircleRadius = 3 * dataIndex;
@@ -554,9 +596,12 @@ https://stackoverflow.com/questions/19669786/check-if-element-is-visible-in-dom
     ctx.strokeStyle = "violet";
 
     ctx.beginPath();
-    ctx.moveTo(0, (canvas.height / 2) - currData[0]);
-    for(var i = 1; i < currData.length; i++) {
-      ctx.lineTo((canvas.width / currData.length) * i, (canvas.height / 2) - currData[i]);
+    ctx.moveTo(0, canvas.height / 2 - currData[0]);
+    for (var i = 1; i < currData.length; i++) {
+      ctx.lineTo(
+        (canvas.width / currData.length) * i,
+        canvas.height / 2 - currData[i]
+      );
     }
     ctx.stroke();
     ctx.closePath();
@@ -565,7 +610,7 @@ https://stackoverflow.com/questions/19669786/check-if-element-is-visible-in-dom
   }
 
   //Draws bezier curves using frequency data for control points
-  function drawBezierCurves( currData, dataLength, dataIndex) {
+  function drawBezierCurves(currData, dataLength, dataIndex) {
     ctx.save();
 
     var firstPointX = (dataIndex / dataLength - 1) * (canvas.width / 2);
@@ -573,9 +618,9 @@ https://stackoverflow.com/questions/19669786/check-if-element-is-visible-in-dom
     var lastPointX = canvas.width - firstPointX;
     var lastPointY = canvas.height / 2;
     var cp1X = firstPointX;
-    var cp1Y = firstPointY + (currData * 3);
+    var cp1Y = firstPointY + currData * 3;
     var cp2X = lastPointX;
-    var cp2Y = lastPointY - (currData * 3);
+    var cp2Y = lastPointY - currData * 3;
 
     ctx.lineWidth = 2;
     ctx.strokeStyle = "#61FF88";
@@ -583,7 +628,7 @@ https://stackoverflow.com/questions/19669786/check-if-element-is-visible-in-dom
     ctx.beginPath();
 
     ctx.moveTo(firstPointX, firstPointY);
-    ctx.bezierCurveTo( cp1X, cp1Y, cp2X, cp2Y, lastPointX, lastPointY);
+    ctx.bezierCurveTo(cp1X, cp1Y, cp2X, cp2Y, lastPointX, lastPointY);
 
     ctx.stroke();
     ctx.closePath();
@@ -595,15 +640,26 @@ https://stackoverflow.com/questions/19669786/check-if-element-is-visible-in-dom
   //Draws our video to the canvas, chroma key's it,
   // and inverts and colors that weren't chroma keyed
   function drawVideo() {
-    ctx.drawImage(videoElement, 0, 0, videoElement.clientWidth, videoElement.clientHeight);
-    var imageData = ctx.getImageData( 0, 0, videoElement.clientWidth, videoElement.clientHeight);
+    ctx.drawImage(
+      videoElement,
+      0,
+      0,
+      videoElement.clientWidth,
+      videoElement.clientHeight
+    );
+    var imageData = ctx.getImageData(
+      0,
+      0,
+      videoElement.clientWidth,
+      videoElement.clientHeight
+    );
 
     var data = imageData.data;
     var length = data.length;
     var width = imageData.width;
 
     //Iterates once every 4 pixels to greatly improve performance
-    for (var i = 0; i < length; i+= 4) {
+    for (var i = 0; i < length; i += 4) {
       var green = data[i * 4 + 1];
       if (green > 150) {
         data[i * 4 + 3] = 0;
@@ -613,10 +669,12 @@ https://stackoverflow.com/questions/19669786/check-if-element-is-visible-in-dom
       }
 
       // invert
-      var red = data[i], green = data[i+1], blue = data[i+2];
-      data[i] = 255 - red;  		// set red value
-      data[i+1] = 255 - green;  		// set blue value
-      data[i+2] = 255 - blue;		// set green value
+      var red = data[i],
+        green = data[i + 1],
+        blue = data[i + 2];
+      data[i] = 255 - red; // set red value
+      data[i + 1] = 255 - green; // set blue value
+      data[i + 2] = 255 - blue; // set green value
     }
 
     ctx.putImageData(imageData, 0, 0);
@@ -624,36 +682,34 @@ https://stackoverflow.com/questions/19669786/check-if-element-is-visible-in-dom
 
   //Applies any filter effects that were selected to the canvas
   function applyFilters() {
-    if(threshold || tintRed || noise) {
-      var imageData = ctx.getImageData( 0, 0, canvas.width, canvas.height);
+    if (threshold || tintRed || noise) {
+      var imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
       var data = imageData.data;
       var length = data.length;
       var width = imageData.width;
 
       for (var i = 0; i < length; i += 4) {
+        if (tintRed) {
+          data[i] = data[i] + 100;
+        }
 
-  				 if (tintRed) {
-  				 	data[i] = data[i] + 100;
-  				 }
+        if (noise && Math.random() < 0.1) {
+          data[i] = data[i + 1] = data[i + 2] = 128; // graynoise
+        }
 
-  				 if ( noise && Math.random () < .10 ) {
-  				 	data[i] = data[i+1] = data[i+2] = 128; // graynoise
-  				 }
+        if (threshold) {
+          var red = data[i],
+            green = data[i + 1],
+            blue = data[i + 2];
 
-  				 if (threshold) {
-  				 	var red = data[i], green = data[i+1], blue = data[i+2];
-
-  				 	if(0.2126 * red + 0.7152 * green + 0.0722 * blue >= threshVal)
-  				 		data[i] = data[i+1] = data[i+2] = 255;
-  				 	else
-  				 		data[i] = data[i+1] = data[i+2] = 0;
-  				 }
-
-  			}
-  			// put the modified data back on the canvas
-  			ctx.putImageData( imageData, 0, 0);
+          if (0.2126 * red + 0.7152 * green + 0.0722 * blue >= threshVal)
+            data[i] = data[i + 1] = data[i + 2] = 255;
+          else data[i] = data[i + 1] = data[i + 2] = 0;
+        }
+      }
+      // put the modified data back on the canvas
+      ctx.putImageData(imageData, 0, 0);
     }
-
   }
 
   //SPOTIFY API CODE
@@ -665,10 +721,11 @@ https://stackoverflow.com/questions/19669786/check-if-element-is-visible-in-dom
 
   function getHashParams() {
     var hashParams = {};
-    var e, r = /([^&;=]+)=?([^&;]*)/g,
-        q = window.location.hash.substring(1);
-    while ( e = r.exec(q)) {
-       hashParams[e[1]] = decodeURIComponent(e[2]);
+    var e,
+      r = /([^&;=]+)=?([^&;]*)/g,
+      q = window.location.hash.substring(1);
+    while ((e = r.exec(q))) {
+      hashParams[e[1]] = decodeURIComponent(e[2]);
     }
     return hashParams;
   }
@@ -676,227 +733,180 @@ https://stackoverflow.com/questions/19669786/check-if-element-is-visible-in-dom
   var params = getHashParams();
 
   var access_token = params.access_token,
-      refresh_token = params.refresh_token,
-      error = params.error;
+    refresh_token = params.refresh_token,
+    error = params.error;
 
   if (error) {
-    alert('There was an error during the authentication');
+    alert("There was an error during the authentication");
   } else {
-    if(access_token) {
+    if (access_token) {
       //console.log("User should be logged in now");
       var loggedOutElements = document.getElementsByClassName("logged-out");
       loggedOutElements[0].style.display = "none";
       var loggedInElements = document.getElementsByClassName("logged-in");
       loggedInElements[0].style.display = "initial";
       loggedInElements[1].style.display = "initial";
-    }
-    else {
-          //console.log("User should be logged out now");
-          var loggedOutElements = document.getElementsByClassName("logged-out");
-          loggedOutElements[0].style.display = "initial";
-          var loggedInElements = document.getElementsByClassName("logged-in");
-          loggedInElements[0].style.display = "none";
-          loggedInElements[1].style.display = "none";
+    } else {
+      //console.log("User should be logged out now");
+      var loggedOutElements = document.getElementsByClassName("logged-out");
+      loggedOutElements[0].style.display = "initial";
+      var loggedInElements = document.getElementsByClassName("logged-in");
+      loggedInElements[0].style.display = "none";
+      loggedInElements[1].style.display = "none";
     }
   }
 
-  //My custom Spotify CODE -- I wrote these myself after modifying
-  //Some of the start code from the Spotify API examples
-
-//Deletes previous search results and calls songSearch() with a query
-//that the user has entered in the search field
-  var generateSearchResults = function(){
-    //Make dropdown visible
+  //Deletes previous search results and calls songSearch() with a query
+  //that the user has entered in the search field
+  var generateSearchResults = function() {
     spResultsBox.style.display = "initial";
 
     //delete old search results
-
-    var searchSection = document.getElementById('sp-searches');
-    //Grab every div inside my search section, leaving my text section alone
-    var searchSectionItems = searchSection.getElementsByTagName('div');
-    //Remove previous search items from the search section
-    for(var i = 0; i < searchSectionItems.length; i++) {
-        searchSection.removeChild(searchSectionItems[i]);
-        i--;
+    var searchSection = document.getElementById("sp-searches");
+    var searchSectionItems = searchSection.getElementsByTagName("div");
+    for (var i = 0; i < searchSectionItems.length; i++) {
+      searchSection.removeChild(searchSectionItems[i]);
+      i--;
     }
 
-    //Fix search bar height
     spResultsBox.style.height = spSearches.offsetHeight + 20 + "px";
 
-    //Grab Search Query from input field
     var searchQuery = spSearchField.value;
 
     //Make API call with search query
-    if(searchQuery != "")  //Don't search an empty query
-    {
+    if (searchQuery != "") {
       spResultsBox.style.display = "initial";
       songSearch(searchQuery);
-    }
-    else
-      spResultsBox.style.display = "none";
+    } else spResultsBox.style.display = "none";
+  };
 
-  }
-
-//Makes an API call with the given search query, calls
-//appendSearchResults() with the result of the search
+  //Makes an API call with the given search query, calls
+  //appendSearchResults() with the result of the search
   function songSearch(songQuery) {
     var fixedQuery = "";
     //Replace spaces with + to convert the query to the correct request format
-    for(var i = 0; i < songQuery.length; i++)
-    {
-      if(songQuery[i] == ' ')
-        fixedQuery += '+';
+    for (var i = 0; i < songQuery.length; i++) {
+      if (songQuery[i] == " ") fixedQuery += "+";
       else {
         fixedQuery += songQuery[i];
       }
     }
 
-    var searchLink = 'https://api.spotify.com/v1/search?q=' + songQuery + "&limit=5&type=track";
+    var searchLink =
+      "https://api.spotify.com/v1/search?q=" +
+      songQuery +
+      "&limit=5&type=track";
     $.ajax({
       url: searchLink,
       headers: {
-        'Authorization': 'Bearer ' + access_token
+        Authorization: "Bearer " + access_token
       },
       success: appendSearchResults
-    }).success(function(data) {
-      //return data;
     });
   }
 
   //Takes the search results, creates elements for them,
   //and adds them to the search box
   var appendSearchResults = function(results) {
-    //console.dir(results);
     var songs = results.tracks.items;
-    for(var i = 0; i < songs.length; i++) {
-      if(songs[i].preview_url == null) songs.splice(i, 1);
+    for (var i = 0; i < songs.length; i++) {
+      if (songs[i].preview_url == null) songs.splice(i, 1);
     }
 
     //If there are no results
-    if(songs.length == 0) {
-      //Create a div element
+    if (songs.length == 0) {
       var nothingFoundDiv = document.createElement("div");
-      var nothingFoundTextNode = document.createTextNode("No songs matching your query.");
+      var nothingFoundTextNode = document.createTextNode(
+        "No songs matching your query."
+      );
       nothingFoundDiv.appendChild(nothingFoundTextNode);
 
-      //Add div to the search box
       nothingFoundDiv.appendAfter(spAppendSpan);
     }
 
-    //For each song returned
-    for(var i = songs.length - 1; i >= 0; i--) {
-      //Create a div element
+    // Create elements for the songs returned
+    for (var i = songs.length - 1; i >= 0; i--) {
       var searchItemElement = document.createElement("div");
 
-      //Create string containing song name and artists
       var currentSong = songs[i];
 
       var songName = currentSong.name;
       var artists = "";
-      for(var j = 0; j < currentSong.artists.length; j++) {
-        if(j != (currentSong.artists.length - 1))
+      for (var j = 0; j < currentSong.artists.length; j++) {
+        if (j != currentSong.artists.length - 1)
           artists += currentSong.artists[j].name + ", ";
         else {
           artists += currentSong.artists[j].name;
         }
       }
 
-      //Create span element and icon element,
-      //appendChild the span and icon to the searchItemElement
-
-      //Create search item text element
       var searchItemSpan = document.createElement("span");
       var searchItemText = songName + " by " + artists;
       searchItemSpan.innerHTML = searchItemText;
 
       var searchItemIcon = document.createElement("div");
 
-      //Add important classes and id
       searchItemIcon.classList.add("add-button");
       var iconId = "song" + i;
       searchItemIcon.id = iconId;
       searchItemIcon.innerHTML = "Add Song";
 
-      //Add event handler for adding the searchItem
       searchItemIcon.onclick = addSongHandlerWrapper(currentSong);
 
-      //Append elements
       searchItemElement.appendChild(searchItemSpan);
       searchItemElement.appendChild(searchItemIcon);
 
-      //Add my searchItem class to it for styling
       searchItemElement.classList.add("search-item");
 
-      //Add the search item to the search result area
       searchItemElement.appendAfter(spAppendSpan);
     }
 
-    //Fix search bar height
     spResultsBox.style.height = spSearches.offsetHeight + 20 + "px";
-  }
+  };
 
-  /**
- * Passing parameters into an event handler's function causes issues
- * because a function with paranthesis will get called on that line.
- * This causes the button's event handler to just return our function's
- * return value when triggered instead of calling our function.
- *
- * To fix this we had to create a wrapper containing our desired parameter
- * and set the return value of our wrapper equal to the function we
- * would like to call
- *
- * This solution is borrowed from my Shape Viewer Exercise and from here
- * /http://2cor214.blogspot.com/2010/08/passing-arguments-to-event-handler-in.html
-**/
-var addSongHandlerWrapper = function (song) {
-  var eventHandler = function()
-  {
-    addSongToList(song);
-  }
-  return eventHandler;
-}
+  var addSongHandlerWrapper = function(song) {
+    var eventHandler = function() {
+      addSongToList(song);
+    };
+    return eventHandler;
+  };
 
-//Adds a song to the tracklist so the user can select it
-function addSongToList(song) {
-  //Add the song to our Closure variable (addedSongs)
-  addedSongs[addedSongs.length] = song;
-  //console.dir(addedSongs);
+  //Adds a song to the tracklist so the user can select it
+  function addSongToList(song) {
+    //Add the song to our Closure variable (addedSongs)
+    addedSongs[addedSongs.length] = song;
 
-  //Delete all added options elements
-  var songList = document.getElementById('trackSelect');
+    //Delete all added options elements
+    var songList = document.getElementById("trackSelect");
 
-  //Removes all added songs
-  for(var i = 0; i < songList.childNodes.length; i++) {
-    //If the childNode has a classList and contains the 'added-song' class
-    if(songList.childNodes[i].classList != null) {
-      if(songList.childNodes[i].classList.contains("added-song"))
-      {
-        //Delete song option element and iterate backwards
-        songList.removeChild(songList.childNodes[i]);
-        i--;
+    //Removes all added songs
+    for (var i = 0; i < songList.childNodes.length; i++) {
+      //If the childNode has a classList and contains the 'added-song' class
+      if (songList.childNodes[i].classList != null) {
+        if (songList.childNodes[i].classList.contains("added-song")) {
+          //Delete song option element and iterate backwards
+          songList.removeChild(songList.childNodes[i]);
+          i--;
+        }
       }
     }
 
+    //Create new <option> elements for every added song and append them
+    for (var i = 0; i < addedSongs.length; i++) {
+      var songOption = document.createElement("option");
+      songOption.value = addedSongs[i].preview_url;
+      songOption.displayName = addedSongs[i].name;
+      songOption.innerHTML = addedSongs[i].name;
+      songOption.classList.add("added-song");
+      songList.appendChild(songOption);
+    }
   }
 
-  //Create new <option> elements for every added song and append them
-  for(var i = 0; i < addedSongs.length; i++) {
-    var songOption = document.createElement("option");
-    songOption.value = addedSongs[i].preview_url;
-    songOption.displayName = addedSongs[i].name;
-    songOption.innerHTML = addedSongs[i].name;
-    songOption.classList.add("added-song");
-    //console.dir(songOption);
-    songList.appendChild(songOption);
-  }
-}
+  window.addEventListener("load", init);
+  window.addEventListener("click", initAudio);
+})();
 
-  //Call init on window load
-  window.addEventListener("load",init);
-}());
-
-//Borrowed this function from
-// https://stackoverflow.com/questions/4793604/how-to-insert-an-element-after-another-element-in-javascript-without-using-a-lib
-Element.prototype.appendAfter = function (element) {
+(Element.prototype.appendAfter = function(element) {
   element.parentNode.insertBefore(this, element.nextSibling);
-},false;
+}),
+  false;
