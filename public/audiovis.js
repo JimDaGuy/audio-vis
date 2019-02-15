@@ -85,6 +85,9 @@
   }
 
   function initAudio() {
+    // Remove event listener
+    window.removeEventListener("click", initAudio, true);
+
     //Set variable for audio element
     audioElement = document.querySelector("audio");
     /*
@@ -903,7 +906,7 @@ https://stackoverflow.com/questions/19669786/check-if-element-is-visible-in-dom
   }
 
   window.addEventListener("load", init);
-  window.addEventListener("click", initAudio);
+  window.addEventListener("click", initAudio, true);
 })();
 
 (Element.prototype.appendAfter = function(element) {
